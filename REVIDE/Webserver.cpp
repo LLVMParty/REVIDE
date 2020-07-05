@@ -25,7 +25,11 @@ Webserver::Webserver(QObject* parent)
         type = QString::fromStdString(req.get_param_value("type"));
         if(req.has_param("title"))
             title =  QString::fromStdString(req.get_param_value("title"));
-        emit llvm(type, title, QByteArray::fromStdString(req.body));
+
+        auto body = QByteArray::fromStdString(req.body);
+        body = QByteArray::fromBase64(body);
+
+        emit llvm(type, title, body);
     });
 }
 
