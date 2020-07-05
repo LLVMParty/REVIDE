@@ -18,7 +18,7 @@
     <widget class="QPlainTextEdit" name="plainTextBitcode">
      <property name="font">
       <font>
-       <family>Courier New</family>
+       <family>Lucida Console</family>
       </font>
      </property>
      <property name="lineWrapMode">

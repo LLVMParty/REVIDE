@@ -19,7 +19,7 @@
      <widget class="QPlainTextEdit" name="plainTextLog">
       <property name="font">
        <font>
-        <family>Courier New</family>
+        <family>Lucida Console</family>
        </font>
       </property>
      </widget>
