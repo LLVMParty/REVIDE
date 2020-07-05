@@ -13,6 +13,10 @@
   <property name="windowTitle">
    <string>LLVM IR</string>
   </property>
+  <property name="windowIcon">
+   <iconset resource="resources.qrc">
+    <normaloff>:/images/necromancer.svg</normaloff>:/images/necromancer.svg</iconset>
+  </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
     <widget class="QPlainTextEdit" name="plainTextBitcode">
@@ -52,6 +56,8 @@
    </item>
   </layout>
  </widget>
- <resources/>
+ <resources>
+  <include location="resources.qrc"/>
+ </resources>
  <connections/>
 </ui>
