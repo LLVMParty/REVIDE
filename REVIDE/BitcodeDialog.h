@@ -20,6 +20,9 @@ public:
     ~BitcodeDialog();
     bool load(const QString& type, const QByteArray& data);
 
+private slots:
+    void on_buttonGodbolt_clicked();
+
 private:
     Ui::BitcodeDialog* ui = nullptr;
     std::unique_ptr<LLVMGlobalContext> mContext;
