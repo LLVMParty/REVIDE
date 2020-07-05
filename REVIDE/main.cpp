@@ -6,7 +6,8 @@
 
 int main(int argc, char *argv[])
 {
-    llvm::LLVMContext context;
+    setvbuf(stdout, nullptr, _IONBF, 0);
+    setvbuf(stderr, nullptr, _IONBF, 0);
     QApplication a(argc, argv);
     MainWindow w;
     w.show();
