@@ -33,7 +33,7 @@ BitcodeHighlighter::BitcodeHighlighter(QTextDocument *parent)
         "win64cc", "x86_fastcallcc", "x86_stdcallcc", "x86_thiscallcc", "zeroext",
 
         // Additional keywords
-        "source_filename", "nofree",
+        "source_filename", "nofree", "willreturn",
     };
     for (const QString &pattern : keywords) {
         rule.pattern = QRegularExpression(QString("\\b%1\\b").arg(pattern));
