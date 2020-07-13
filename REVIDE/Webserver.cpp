@@ -31,6 +31,9 @@ Webserver::Webserver(QObject* parent)
 
         emit llvm(type, title, body);
     });
+
+    // TODO: VTIL symbolic expression
+    // https://blog.can.ac/2020/04/11/writing-an-optimizing-il-compiler-for-dummies-by-a-dummy/
 }
 
 void Webserver::run()

@@ -58,6 +58,6 @@ void MainWindow::llvmSlot(QString type, QString title, QByteArray data)
         dialog = found->first;
     }
     dialog->show();
-    dialog->raise();
-    dialog->activateWindow();
+    //dialog->raise();
+    //dialog->activateWindow();
 }
