@@ -5,11 +5,13 @@
 #include <llvm/IR/Module.h>
 #include <llvm/IR/AssemblyAnnotationWriter.h>
 #include <llvm/IRReader/IRReader.h>
+#include <llvm/Bitcode/BitcodeReader.h>
 #include <llvm/Support/SourceMgr.h>
 #include <llvm/Support/raw_ostream.h>
 #include <llvm/Support/FormattedStream.h>
 
 #include "lzstring.h"
+#include <sstream>
 
 #include <QDesktopServices>
 
@@ -50,6 +52,9 @@ struct LineAnnotationWriter : llvm::AssemblyAnnotationWriter {
     }
 };
 
+#include <QDebug>
+
+// Taken from WhitePeacock
 struct LLVMGlobalContext
 {
     llvm::LLVMContext Context;
@@ -59,15 +64,33 @@ struct LLVMGlobalContext
 
     LLVMGlobalContext(const LLVMGlobalContext &) = delete;
 
-    bool Parse(const QByteArray& data)
+    bool Parse(const QByteArray& data, QString& errorMessage, int& errorLine, int& errorColumn)
     {
         // TODO: ModuleID comment goes missing
+
         llvm::StringRef sr(data.constData(), data.size());
         auto buf = llvm::MemoryBuffer::getMemBuffer(sr, "", false);
         llvm::SMDiagnostic Err;
         auto module = parseIR(*buf, Err, this->Context);
         if (!module)
+        {
+            std::stringstream ss;
+            errorLine = Err.getLineNo();
+            if(errorLine != -1)
+            {
+                ss << "line: " << errorLine;
+                errorColumn = Err.getColumnNo();
+                if(errorColumn != -1)
+                {
+                    ss << ", column: " << errorColumn + 1;
+                }
+            }
+            ss << ", message: " << Err.getMessage().str();
+            ss << ", line contents: '" << Err.getLineContents().str() << "'";
+            errorMessage = QString::fromStdString(ss.str()).trimmed();
             return false;
+        }
+        errorMessage.clear();
         this->Module = std::move(module);
         return true;
     }
@@ -140,24 +163,35 @@ struct LLVMGlobalContext
 BitcodeDialog::BitcodeDialog(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::BitcodeDialog),
-    mContext(std::make_unique<LLVMGlobalContext>())
+    mContext(new LLVMGlobalContext())
 {
     setWindowFlag(Qt::WindowContextHelpButtonHint, false);
     ui->setupUi(this);
-    mHighlighter = std::make_unique<BitcodeHighlighter>(ui->plainTextBitcode->document());
+    mHighlighter = new BitcodeHighlighter(ui->plainTextBitcode->document());
 }
 
 BitcodeDialog::~BitcodeDialog()
 {
     delete ui;
+    delete mContext;
+    delete mHighlighter;
 }
 
-bool BitcodeDialog::load(const QString& type, const QByteArray& data)
+bool BitcodeDialog::load(const QString& type, const QByteArray& data, QString& errorMessage)
 {
     if(type == "module")
     {
-        if(!mContext->Parse(data))
+        if(!mContext->Parse(data, errorMessage, mErrorLine, mErrorColumn))
+        {
+            mErrorMessage = errorMessage;
+            ui->plainTextBitcode->setErrorLine(mErrorLine);
+            ui->plainTextBitcode->setPlainText(data);
+            auto cursor = ui->plainTextBitcode->textCursor();
+            cursor.clearSelection();
+            cursor.setPosition(ui->plainTextBitcode->document()->findBlockByLineNumber(mErrorLine - 1).position() + mErrorColumn);
+            ui->plainTextBitcode->setTextCursor(cursor);
             return false;
+        }
         mAnnotatedLines = mContext->Dump();
         QString text;
         for(const auto& annotatedLine : mAnnotatedLines)
@@ -223,7 +257,7 @@ void BitcodeDialog::on_plainTextBitcode_cursorPositionChanged()
     QString info;
     if(line >= mAnnotatedLines.length())
     {
-        info = "index out of bounds";
+        info = mErrorMessage;
     }
     else
     {

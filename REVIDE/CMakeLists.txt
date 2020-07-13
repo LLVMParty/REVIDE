@@ -18,4 +18,4 @@ target_link_libraries(${PROJECT_NAME} PRIVATE Qt5::Widgets Qt5::Svg LLVM)
 target_include_directories(${PROJECT_NAME} PRIVATE "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>")
 
 # https://cmake.org/cmake/help/v3.14/manual/cmake-compile-features.7.html#requiring-language-standards
-target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_14)
+target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_20)

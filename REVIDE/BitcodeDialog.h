@@ -1,7 +1,6 @@
 #pragma once
 
 #include <QDialog>
-#include <memory>
 
 class BitcodeHighlighter;
 
@@ -49,7 +48,7 @@ class BitcodeDialog : public QDialog
 public:
     explicit BitcodeDialog(QWidget* parent = nullptr);
     ~BitcodeDialog();
-    bool load(const QString& type, const QByteArray& data);
+    bool load(const QString& type, const QByteArray& data, QString& errorMessage);
 
 private slots:
     void on_buttonGodbolt_clicked();
@@ -57,8 +56,10 @@ private slots:
 
 private:
     Ui::BitcodeDialog* ui = nullptr;
-    std::unique_ptr<LLVMGlobalContext> mContext;
-    std::unique_ptr<BitcodeHighlighter> mHighlighter;
+    LLVMGlobalContext* mContext = nullptr;
+    BitcodeHighlighter* mHighlighter = nullptr;
     QVector<AnnotatedLine> mAnnotatedLines;
+    QString mErrorMessage = "index out of bounds";
+    int mErrorLine = -1, mErrorColumn = -1;
 };
 

@@ -27,5 +27,5 @@ private slots:
 private:
     Ui::MainWindow *ui = nullptr;
     Webserver* mWebserver = nullptr;
-    QList<QDialog*> mDialogs;
+    QList<QPair<QDialog*, QByteArray>> mDialogs;
 };

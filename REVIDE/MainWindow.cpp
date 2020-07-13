@@ -1,8 +1,9 @@
 #include "MainWindow.h"
 #include "BitcodeDialog.h"
 #include "ui_MainWindow.h"
+#include <QCryptographicHash>
 
-MainWindow::MainWindow(QWidget *parent)
+MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
@@ -21,7 +22,7 @@ MainWindow::~MainWindow()
 
 void MainWindow::closeEvent(QCloseEvent* event)
 {
-    for(auto dialog : mDialogs)
+    for (auto& [dialog, _] : mDialogs)
         dialog->close();
     QMainWindow::closeEvent(event);
 }
@@ -33,15 +34,30 @@ void MainWindow::helloSlot(QString ip)
 
 void MainWindow::llvmSlot(QString type, QString title, QByteArray data)
 {
-    ui->plainTextLog->appendPlainText(QString("llvm %1 (%2), %3 bytes").arg(type).arg(title).arg(data.length()));
-    auto bitcodeDialog = new BitcodeDialog(nullptr);
-    if(!title.isEmpty())
-    bitcodeDialog->setWindowTitle(QString("[%1] %2 (%3)").arg(mDialogs.size() + 1).arg(bitcodeDialog->windowTitle()).arg(title));
-    if(!bitcodeDialog->load(type, data))
+    auto hash = QCryptographicHash::hash(data, QCryptographicHash::Sha1);
+    auto found = std::find_if(mDialogs.begin(), mDialogs.end(), [&](const auto& e) {
+        return e.second == hash;
+    });
+    QDialog* dialog = nullptr;
+    if (found == mDialogs.end())
     {
-        ui->plainTextLog->appendPlainText("Failed to load data :(\n");
+        ui->plainTextLog->appendPlainText(QString("llvm %1 (%2), %3 bytes").arg(type).arg(title).arg(data.length()));
+        auto bitcodeDialog = new BitcodeDialog(nullptr);
+        if (!title.isEmpty())
+            bitcodeDialog->setWindowTitle(QString("[%1] %2 (%3)").arg(mDialogs.size() + 1).arg(bitcodeDialog->windowTitle()).arg(title));
+        QString errorMessage;
+        if (!bitcodeDialog->load(type, data, errorMessage))
+        {
+            ui->plainTextLog->appendPlainText(QString("Failed to load LLVM module: %1").arg(errorMessage));
+        }
+        mDialogs.append({ bitcodeDialog, hash });
+        dialog = bitcodeDialog;
     }
-    bitcodeDialog->show();
-    mDialogs.append(bitcodeDialog);
+    else
+    {
+        dialog = found->first;
+    }
+    dialog->show();
+    dialog->raise();
+    dialog->activateWindow();
 }
-
