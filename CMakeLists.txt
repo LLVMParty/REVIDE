@@ -29,5 +29,6 @@ if(MSVC)
 endif()
 
 add_subdirectory(REVIDE)
+add_subdirectory(REVIDE-Helpers)
 
 # TODO: https://github.com/LLVMParty/ExtensionRepository/edit/main/extensions.txt
