@@ -174,8 +174,10 @@ BitcodeDialog::BitcodeDialog(QWidget* parent)
     ui->setupUi(this);
 
     QPalette palette = ui->plainTextBitcode->palette();
-    palette.setColor(QPalette::Base, QColor(254, 255, 247));
+    // palette.setColor(QPalette::Base, QColor(254, 255, 247)); // light theme background
+    palette.setColor(QPalette::Base, QColor(28, 38, 46)); // dark theme background
     ui->plainTextBitcode->setPalette(palette);
+    ui->plainTextBitcode->setStyleSheet("QTextEdit { background-color : red; color : blue; }");
 
     mHighlighter = new BitcodeHighlighter(ui->plainTextBitcode->document());
 }

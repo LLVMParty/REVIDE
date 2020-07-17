@@ -5,8 +5,12 @@ BitcodeHighlighter::BitcodeHighlighter(QTextDocument* parent)
 {
     HighlightingRule rule;
 
-    // keywordFormat.setForeground(QBrush(QColor(20, 54, 66)));
-    keywordFormat.setForeground(QBrush(HEXColorToRGBColor(0x333F47)));
+    // Styling:
+    // - Light theme base: https://coolors.co/333f47-1ba7b3-8799c4-fefff7-dfdbbe-f2edd7-e90b55-80b700-a34784
+    // - Dark theme base: https://coolors.co/ceff1a-bbb83c-82816d-706eb0-141515-161b1f-1c262e-52f2ed-473198-945aaf
+
+    // keywordFormat.setForeground(QBrush(HEXColorToRGBColor(0x333F47))); // light theme foreground
+    keywordFormat.setForeground(QBrush(HEXColorToRGBColor(0x82816D))); // dark theme foreground
     keywordFormat.setFontWeight(QFont::Bold);
     const QString keywords[] = {
         // https://github.com/compiler-explorer/compiler-explorer/blob/6eab83562af4c81269222fc0e7b12092884e0912/static/modes/llvm-ir-mode.js#L56
@@ -158,8 +162,8 @@ BitcodeHighlighter::BitcodeHighlighter(QTextDocument* parent)
         highlightingRules.append(rule);
     }
 
-    // instructionFormat.setForeground(QBrush(QColor(15, 139, 141)));
-    instructionFormat.setForeground(QBrush(HEXColorToRGBColor(0x80B700)));
+    // instructionFormat.setForeground(QBrush(HEXColorToRGBColor(0x80B700))); // light theme foreground
+    instructionFormat.setForeground(QBrush(HEXColorToRGBColor(0x52F2ED))); // dark theme foreground
     instructionFormat.setFontWeight(QFont::Bold);
     const QString instructions[] = {
         "add", "load", "store", "and", "or", "xor", "zext", "call", "switch", "br", "icmp", "phi", "sub", "sext", "shl", "lshr", "ashr", "select", "trunc", "eq", "ne", "sgt", "ret", "ult", "bitcast", "getelementptr"
@@ -171,31 +175,31 @@ BitcodeHighlighter::BitcodeHighlighter(QTextDocument* parent)
         highlightingRules.append(rule);
     }
 
-    // variableFormat.setForeground(QBrush(QColor(135, 37, 91)));
-    variableFormat.setForeground(QBrush(HEXColorToRGBColor(0xA34784)));
+    // variableFormat.setForeground(QBrush(HEXColorToRGBColor(0xA34784))); // light theme foreground
+    variableFormat.setForeground(QBrush(HEXColorToRGBColor(0xBBB83C))); // dark theme foreground
     variableFormat.setFontWeight(QFont::Bold);
     rule.pattern = QRegularExpression(QStringLiteral("%[0-9a-zA-Z\\._]+"));
     rule.format = variableFormat;
     highlightingRules.append(rule);
 
-    // constantFormat.setForeground(QBrush(QColor(168, 32, 26)));
-    constantFormat.setForeground(QBrush(HEXColorToRGBColor(0xE90B55)));
+    // constantFormat.setForeground(QBrush(HEXColorToRGBColor(0xE90B55))); // light theme foreground
+    constantFormat.setForeground(QBrush(HEXColorToRGBColor(0xCEFF1A))); // dark theme foreground
     constantFormat.setFontWeight(QFont::Bold);
     rule.pattern = QRegularExpression(QStringLiteral(" [0-9-]+"));
     rule.format = constantFormat;
     highlightingRules.append(rule);
 
-    // integerTypeFormat.setForeground(QBrush(QColor(236, 154, 41)));
-    integerTypeFormat.setForeground(QBrush(HEXColorToRGBColor(0x8799C4)));
+    // integerTypeFormat.setForeground(QBrush(HEXColorToRGBColor(0x8799C4))); // light theme foreground
+    integerTypeFormat.setForeground(QBrush(HEXColorToRGBColor(0x706EB0))); // dark theme foreground
     integerTypeFormat.setFontWeight(QFont::Bold);
     rule.pattern = QRegularExpression(QStringLiteral("i[1-9][0-9]?"));
     rule.format = integerTypeFormat;
     highlightingRules.append(rule);
 
-    // variableFormat.setForeground(QBrush(QColor(135, 37, 91)));
-    complexPointerTypeFormat.setForeground(QBrush(HEXColorToRGBColor(0x8799C4)));
+    // complexPointerTypeFormat.setForeground(QBrush(HEXColorToRGBColor(0x8799C4))); // light theme foreground
+    complexPointerTypeFormat.setForeground(QBrush(HEXColorToRGBColor(0x706EB0))); // dark theme foreground
     complexPointerTypeFormat.setFontWeight(QFont::Bold);
-    rule.pattern = QRegularExpression(QStringLiteral("%[0-9a-zA-Z\\._]+\\*"));
+    rule.pattern = QRegularExpression(QStringLiteral("[%i]{1}[0-9a-zA-Z\\._]+\\*"));
     rule.format = complexPointerTypeFormat;
     highlightingRules.append(rule);
 
@@ -212,15 +216,15 @@ BitcodeHighlighter::BitcodeHighlighter(QTextDocument* parent)
 
     multiLineCommentFormat.setForeground(Qt::red);
 
-    quotationFormat.setForeground(QBrush(QColor(70, 93, 104)));
+    // quotationFormat.setForeground(QBrush(QColor(70, 93, 104))); // light theme foreground
+    quotationFormat.setForeground(QBrush(HEXColorToRGBColor(0x4D6774))); // dark theme foreground
     rule.pattern = QRegularExpression(QStringLiteral("\".*\""));
     rule.format = quotationFormat;
     highlightingRules.append(rule);
 
     functionFormat.setFontItalic(true);
     functionFormat.setFontWeight(QFont::Bold);
-    // functionFormat.setForeground(QBrush(QColor(18, 97, 104)));
-    functionFormat.setForeground(QBrush(HEXColorToRGBColor(0x1BB8C6)));
+    functionFormat.setForeground(QBrush(HEXColorToRGBColor(0x1BA7B3)));
     rule.pattern = QRegularExpression(QStringLiteral("\\b[A-Za-z0-9_]+(?=\\()"));
     rule.format = functionFormat;
     highlightingRules.append(rule);
@@ -228,7 +232,8 @@ BitcodeHighlighter::BitcodeHighlighter(QTextDocument* parent)
     rule.format = functionFormat;
     highlightingRules.append(rule);
 
-    alignFormat.setForeground(QBrush(HEXColorToRGBColor(0x333F47)));
+    // alignFormat.setForeground(QBrush(HEXColorToRGBColor(0x333F47))); // light theme foreground
+    alignFormat.setForeground(QBrush(HEXColorToRGBColor(0x98579F))); // dark theme foreground
     rule.pattern = QRegularExpression(QStringLiteral("align [0-9-]+"));
     rule.format = alignFormat;
     highlightingRules.append(rule);
