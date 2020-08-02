@@ -66,6 +66,9 @@ CodeEditor::CodeEditor(QWidget* parent)
 
     updateLineNumberAreaWidth(0);
     highlightCurrentLine();
+
+    // setStyleSheet("QPlainTextEdit { color: black; background-color: #fefff7; }"); // light theme background
+    setStyleSheet("QPlainTextEdit { color: white; background-color: #1c262e; }"); // dark theme background
 }
 
 //![constructor]
