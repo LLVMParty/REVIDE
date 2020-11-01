@@ -1,9 +1,13 @@
 #include "BitcodeHighlighter.h"
+#include <QDebug>
+#include "CustomStyles.h"
 
 BitcodeHighlighter::BitcodeHighlighter(QTextDocument* parent)
     : QSyntaxHighlighter(parent)
 {
     HighlightingRule rule;
+
+	qDebug() << CustomStyles::instance().testColor;
 
     // Styling:
     // - Light theme base: https://coolors.co/333f47-1ba7b3-8799c4-fefff7-dfdbbe-f2edd7-e90b55-80b700-a34784
