@@ -11,7 +11,9 @@ sh install-qt.sh --directory /d/Qt --host windows_x86 --target desktop --toolcha
 
 ## LLVM
 
-TODO
+TODO: Add instructions on how to produce this package.
+
+You can download a prebuilt package for Visual Studio 2019 at https://github.com/LLVMParty/REVIDE/releases/tag/libraries.
 
 ## Building
 
