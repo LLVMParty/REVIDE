@@ -4,6 +4,9 @@ cmake_minimum_required(VERSION 3.15)
 
 project(REVIDE-Project)
 
+# Enable solution folder support
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+
 # Append the CMake module search path so we can use our own modules
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/CMake)
 
@@ -26,3 +29,5 @@ if(MSVC)
 endif()
 
 add_subdirectory(REVIDE)
+
+# TODO: https://github.com/LLVMParty/ExtensionRepository/edit/main/extensions.txt

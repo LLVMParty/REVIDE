@@ -1,5 +1,8 @@
 <RCC>
     <qresource prefix="/">
         <file>images/necromancer.svg</file>
+        <file>examples/LLVM/WhitePeacock/MinimalExample.bc</file>
+        <file>themes/Dark.css</file>
+        <file>themes/Light.css</file>
     </qresource>
 </RCC>

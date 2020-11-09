@@ -52,6 +52,7 @@
 #define CODEEDITOR_H
 
 #include <QPlainTextEdit>
+#include "Styled.h"
 
 QT_BEGIN_NAMESPACE
 class QPaintEvent;
@@ -64,27 +65,33 @@ class LineNumberArea;
 
 //![codeeditordefinition]
 
-class CodeEditor : public QPlainTextEdit
+class CodeEditor : public QPlainTextEdit, Styled<CodeEditor>
 {
     Q_OBJECT
 
 public:
-    CodeEditor(QWidget *parent = nullptr);
+    CSS_COLOR(selectedLineHighlightColor);
+    CSS_COLOR(errorLineHighlightColor);
+    CSS_COLOR(lineNumberColor);
+    CSS_COLOR(lineNumberBackgroundColor);
 
-    void lineNumberAreaPaintEvent(QPaintEvent *event);
+public:
+    CodeEditor(QWidget* parent = nullptr);
+
+    void lineNumberAreaPaintEvent(QPaintEvent* event);
     int lineNumberAreaWidth();
     void setErrorLine(int line);
 
 protected:
-    void resizeEvent(QResizeEvent *event) override;
+    void resizeEvent(QResizeEvent* event) override;
 
 private slots:
     void updateLineNumberAreaWidth(int newBlockCount);
     void highlightCurrentLine();
-    void updateLineNumberArea(const QRect &rect, int dy);
+    void updateLineNumberArea(const QRect& rect, int dy);
 
 private:
-    QWidget *lineNumberArea;
+    QWidget* lineNumberArea;
     int mErrorLine = -1;
 };
 
@@ -94,8 +101,11 @@ private:
 class LineNumberArea : public QWidget
 {
 public:
-    LineNumberArea(CodeEditor *editor) : QWidget(editor), codeEditor(editor)
-    {}
+    LineNumberArea(CodeEditor* editor)
+        : QWidget(editor)
+        , codeEditor(editor)
+    {
+    }
 
     QSize sizeHint() const override
     {
@@ -103,13 +113,13 @@ public:
     }
 
 protected:
-    void paintEvent(QPaintEvent *event) override
+    void paintEvent(QPaintEvent* event) override
     {
         codeEditor->lineNumberAreaPaintEvent(event);
     }
 
 private:
-    CodeEditor *codeEditor;
+    CodeEditor* codeEditor;
 };
 
 //![extraarea]

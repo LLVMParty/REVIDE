@@ -15,44 +15,48 @@
 
 #include <QDesktopServices>
 
-struct LineAnnotationWriter : llvm::AssemblyAnnotationWriter {
+struct LineAnnotationWriter : llvm::AssemblyAnnotationWriter
+{
     /// emitFunctionAnnot - This may be implemented to emit a string right before
     /// the start of a function.
-    void emitFunctionAnnot(const llvm::Function *F,
-                           llvm::formatted_raw_ostream &OS) override {
+    void emitFunctionAnnot(const llvm::Function* F,
+        llvm::formatted_raw_ostream& OS) override
+    {
         OS << "; META:Function:" << F << "\n";
     }
 
     /// emitBasicBlockStartAnnot - This may be implemented to emit a string right
     /// after the basic block label, but before the first instruction in the
     /// block.
-    void emitBasicBlockStartAnnot(const llvm::BasicBlock *BB,
-                                  llvm::formatted_raw_ostream &OS) override {
+    void emitBasicBlockStartAnnot(const llvm::BasicBlock* BB,
+        llvm::formatted_raw_ostream& OS) override
+    {
         OS << "; META:BasicBlockStart:" << BB << "\n";
     }
 
     /// emitBasicBlockEndAnnot - This may be implemented to emit a string right
     /// after the basic block.
-    void emitBasicBlockEndAnnot(const llvm::BasicBlock *BB,
-                                llvm::formatted_raw_ostream &OS) override {
+    void emitBasicBlockEndAnnot(const llvm::BasicBlock* BB,
+        llvm::formatted_raw_ostream& OS) override
+    {
         OS << "; META:BasicBlockEnd:" << BB << "\n";
     }
 
     /// emitInstructionAnnot - This may be implemented to emit a string right
     /// before an instruction is emitted.
-    void emitInstructionAnnot(const llvm::Instruction *I,
-                              llvm::formatted_raw_ostream &OS) override {
+    void emitInstructionAnnot(const llvm::Instruction* I,
+        llvm::formatted_raw_ostream& OS) override
+    {
         OS << "; META:Instruction:" << I << "\n";
     }
 
     /// printInfoComment - This may be implemented to emit a comment to the
     /// right of an instruction or global value.
-    void printInfoComment(const llvm::Value &V,
-                          llvm::formatted_raw_ostream &OS) override {
+    void printInfoComment(const llvm::Value& V,
+        llvm::formatted_raw_ostream& OS) override
+    {
     }
 };
-
-#include <QDebug>
 
 // Taken from WhitePeacock
 struct LLVMGlobalContext
@@ -62,7 +66,7 @@ struct LLVMGlobalContext
 
     LLVMGlobalContext() = default;
 
-    LLVMGlobalContext(const LLVMGlobalContext &) = delete;
+    LLVMGlobalContext(const LLVMGlobalContext&) = delete;
 
     bool Parse(const QByteArray& data, QString& errorMessage, int& errorLine, int& errorColumn)
     {
@@ -76,11 +80,11 @@ struct LLVMGlobalContext
         {
             std::stringstream ss;
             errorLine = Err.getLineNo();
-            if(errorLine != -1)
+            if (errorLine != -1)
             {
                 ss << "line: " << errorLine;
                 errorColumn = Err.getColumnNo();
-                if(errorColumn != -1)
+                if (errorColumn != -1)
                 {
                     ss << ", column: " << errorColumn + 1;
                 }
@@ -104,40 +108,39 @@ struct LLVMGlobalContext
         QVector<AnnotatedLine> annotatedLines;
         QString line;
         Annotation annotation;
-        auto flushLine = [&]()
-        {
-            if(line.startsWith("; META:"))
+        auto flushLine = [&]() {
+            if (line.startsWith("; META:"))
             {
                 QStringList s = line.split(':');
                 QString type = s[1];
                 QString ptr = s[2];
-                if(ptr.startsWith("0x"))
+                if (ptr.startsWith("0x"))
                     ptr = ptr.right(ptr.length() - 2);
                 auto x = ptr.toULongLong(nullptr, 16);
                 annotation.ptr = (void*)x;
                 annotation.line = annotatedLines.length();
-                if(type == "Function")
+                if (type == "Function")
                 {
                     annotation.type = AnnotationType::Function;
                 }
-                else if(type == "BasicBlockStart")
+                else if (type == "BasicBlockStart")
                 {
                     annotation.type = AnnotationType::BasicBlockStart;
                     annotatedLines.back().annotation = annotation;
                 }
-                else if(type == "BasicBlockEnd")
+                else if (type == "BasicBlockEnd")
                 {
                     annotation.type = AnnotationType::BasicBlockEnd;
                 }
-                else if(type == "Instruction")
+                else if (type == "Instruction")
                 {
                     annotation.type = AnnotationType::Instruction;
                 }
             }
             else
             {
-                annotatedLines.push_back({line, annotation});
-                if(annotation.type == AnnotationType::BasicBlockEnd)
+                annotatedLines.push_back({ line, annotation });
+                if (annotation.type == AnnotationType::BasicBlockEnd)
                 {
                     annotation = Annotation();
                 }
@@ -147,27 +150,28 @@ struct LLVMGlobalContext
         for (size_t i = 0; i < str.length(); i++)
         {
             char ch = str[i];
-            if(ch == '\r')
+            if (ch == '\r')
                 continue;
-            if(ch == '\n')
+            if (ch == '\n')
                 flushLine();
             else
                 line += ch;
         }
-        if(!line.isEmpty())
+        if (!line.isEmpty())
             flushLine();
         return annotatedLines;
     }
 };
 
-BitcodeDialog::BitcodeDialog(QWidget *parent) :
-    QDialog(parent),
-    ui(new Ui::BitcodeDialog),
-    mContext(new LLVMGlobalContext())
+BitcodeDialog::BitcodeDialog(QWidget* parent)
+    : QDialog(parent)
+    , ui(new Ui::BitcodeDialog)
+    , mContext(new LLVMGlobalContext())
 {
     setWindowFlag(Qt::WindowContextHelpButtonHint, false);
     ui->setupUi(this);
-    mHighlighter = new BitcodeHighlighter(ui->plainTextBitcode->document());
+
+    mHighlighter = new BitcodeHighlighter(this, ui->plainTextBitcode->document());
 }
 
 BitcodeDialog::~BitcodeDialog()
@@ -179,9 +183,9 @@ BitcodeDialog::~BitcodeDialog()
 
 bool BitcodeDialog::load(const QString& type, const QByteArray& data, QString& errorMessage)
 {
-    if(type == "module")
+    if (type == "module")
     {
-        if(!mContext->Parse(data, errorMessage, mErrorLine, mErrorColumn))
+        if (!mContext->Parse(data, errorMessage, mErrorLine, mErrorColumn))
         {
             mErrorMessage = errorMessage;
             ui->plainTextBitcode->setErrorLine(mErrorLine);
@@ -194,7 +198,7 @@ bool BitcodeDialog::load(const QString& type, const QByteArray& data, QString& e
         }
         mAnnotatedLines = mContext->Dump();
         QString text;
-        for(const auto& annotatedLine : mAnnotatedLines)
+        for (const auto& annotatedLine : mAnnotatedLines)
             text += annotatedLine.line + "\n";
         text.chop(1);
         ui->plainTextBitcode->setPlainText(text);
@@ -211,23 +215,23 @@ static QString risonencode(const QString& s)
 {
     auto utf8 = s.toUtf8();
     QString r;
-    for(const char ch : utf8)
+    for (const char ch : utf8)
     {
-        if(ch == '\r')
+        if (ch == '\r')
             continue;
-        if(ch == '\'')
+        if (ch == '\'')
         {
             r += "!'";
         }
-        else if(ch == '!')
+        else if (ch == '!')
         {
             r += "!!";
         }
-        else if(ch == ' ')
+        else if (ch == ' ')
         {
             r += '+';
         }
-        else if((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (ch >= '0' && ch <= '9') || ch == '-' || ch == '.' || ch == '_' || ch == ':' || ch == '$' || ch == '@' || ch == '(' || ch == ')' || ch == '*' || ch == ',' || ch == '/')
+        else if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (ch >= '0' && ch <= '9') || ch == '-' || ch == '.' || ch == '_' || ch == ':' || ch == '$' || ch == '@' || ch == '(' || ch == ')' || ch == '*' || ch == ',' || ch == '/')
         {
             r += ch;
         }
@@ -255,7 +259,7 @@ void BitcodeDialog::on_plainTextBitcode_cursorPositionChanged()
 {
     auto line = ui->plainTextBitcode->textCursor().block().firstLineNumber();
     QString info;
-    if(line >= mAnnotatedLines.length())
+    if (line >= mAnnotatedLines.length())
     {
         info = mErrorMessage;
     }
@@ -264,7 +268,7 @@ void BitcodeDialog::on_plainTextBitcode_cursorPositionChanged()
         const Annotation& annotation = mAnnotatedLines[line].annotation;
         auto typeName = annotationTypeName[(int)annotation.type];
         QString info2;
-        switch(annotation.type)
+        switch (annotation.type)
         {
         case AnnotationType::Nothing:
         {

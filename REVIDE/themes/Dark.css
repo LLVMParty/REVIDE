@@ -1,0 +1,26 @@
+/* Based on: https://coolors.co/ceff1a-bbb83c-82816d-706eb0-141515-161b1f-1c262e-52f2ed-473198-945aaf */
+
+BitcodeDialog {
+    qproperty-keywordColor: #82816D;
+    qproperty-instructionColor: #52F2ED;
+    qproperty-variableColor: #BBB83C;
+    qproperty-constantColor: #CEFF1A;
+    qproperty-integerTypeColor: #706EB0;
+    qproperty-complexPointerTypeColor: #706EB0;
+    qproperty-classColor: #800080;
+    qproperty-singleLineCommentColor: #FF0000;
+    qproperty-multiLineCommentColor: #FF0000;
+    qproperty-quotationColor: #4D6774;
+    qproperty-functionColor: #1BA7B3;
+    qproperty-alignColor: #98579F;
+}
+
+CodeEditor {
+    color: white;
+    background-color: #1c262e;
+
+    qproperty-selectedLineHighlightColor: #141515;
+    qproperty-errorLineHighlightColor: #FF9999;
+    qproperty-lineNumberColor: #c6c3b9;
+    qproperty-lineNumberBackgroundColor: #161b1f;
+}
