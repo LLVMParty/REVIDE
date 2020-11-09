@@ -1,10 +1,12 @@
 #pragma once
 
 #include <QDialog>
+#include "Styled.h"
 
 class BitcodeHighlighter;
 
-namespace Ui {
+namespace Ui
+{
 class BitcodeDialog;
 }
 
@@ -19,8 +21,7 @@ enum class AnnotationType
     BasicBlockEnd,
 };
 
-static const char* annotationTypeName[] =
-{
+static const char* annotationTypeName[] = {
     "Nothing",
     "Function",
     "BasicBlockStart",
@@ -41,9 +42,24 @@ struct AnnotatedLine
     Annotation annotation;
 };
 
-class BitcodeDialog : public QDialog
+class BitcodeDialog : public QDialog, Styled<BitcodeDialog>
 {
     Q_OBJECT
+
+public:
+    CSS_COLOR(keywordColor);
+    CSS_COLOR(instructionColor);
+    CSS_COLOR(variableColor);
+    CSS_COLOR(constantColor);
+    CSS_COLOR(integerTypeColor);
+    CSS_COLOR(complexPointerTypeColor);
+    CSS_COLOR(classColor);
+    CSS_COLOR(singleLineCommentColor);
+    CSS_COLOR(multiLineCommentColor);
+    CSS_COLOR(quotationColor);
+    CSS_COLOR(functionColor);
+    CSS_COLOR(alignColor);
+    CSS_COLOR(testColor);
 
 public:
     explicit BitcodeDialog(QWidget* parent = nullptr);

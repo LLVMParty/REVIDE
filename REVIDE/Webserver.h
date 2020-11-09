@@ -2,11 +2,7 @@
 
 #include <QThread>
 #include <memory>
-
-namespace httplib
-{
-class Server;
-}
+#include "httplib.h"
 
 class Webserver : public QThread
 {

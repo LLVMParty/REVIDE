@@ -3,6 +3,7 @@
 #include <QSyntaxHighlighter>
 #include <QTextCharFormat>
 #include <QRegularExpression>
+#include "BitcodeDialog.h"
 
 QT_BEGIN_NAMESPACE
 class QTextDocument;
@@ -13,7 +14,7 @@ class BitcodeHighlighter : public QSyntaxHighlighter
     Q_OBJECT
 
 public:
-    BitcodeHighlighter(QTextDocument* parent = 0);
+    BitcodeHighlighter(const BitcodeDialog* style, QTextDocument* parent = 0);
 
 protected:
     void highlightBlock(const QString& text) override;

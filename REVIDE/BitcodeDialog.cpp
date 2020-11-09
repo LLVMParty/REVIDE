@@ -58,8 +58,6 @@ struct LineAnnotationWriter : llvm::AssemblyAnnotationWriter
     }
 };
 
-#include <QDebug>
-
 // Taken from WhitePeacock
 struct LLVMGlobalContext
 {
@@ -173,7 +171,7 @@ BitcodeDialog::BitcodeDialog(QWidget* parent)
     setWindowFlag(Qt::WindowContextHelpButtonHint, false);
     ui->setupUi(this);
 
-    mHighlighter = new BitcodeHighlighter(ui->plainTextBitcode->document());
+    mHighlighter = new BitcodeHighlighter(this, ui->plainTextBitcode->document());
 }
 
 BitcodeDialog::~BitcodeDialog()
