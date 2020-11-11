@@ -17,7 +17,7 @@ MainWindow::MainWindow(QWidget* parent)
     initializeExamples(QDir(":/examples"), ui->menu_Examples);
 
     // Start the server
-    mWebserver = new Webserver(this);
+    mWebserver = new Webserver(QSettings().value("Port", 1337).toInt(), this);
     connect(mWebserver, &Webserver::hello, this, &MainWindow::helloSlot);
     connect(mWebserver, &Webserver::llvm, this, &MainWindow::llvmSlot);
     mWebserver->start();
@@ -29,18 +29,36 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::llvmResource(const char* resourcePath)
+void MainWindow::loadFile(const QFileInfo& file)
 {
-    auto type = "module"; // TODO
-    QFile f(resourcePath);
-    if (!f.open(QFile::ReadOnly))
+    // Read the file contents
+    QByteArray contents;
     {
-        QMessageBox::critical(this, tr("Error"), tr("Failed to open resource file"));
-        return;
+        QFile f(file.absoluteFilePath());
+        if (!f.open(QFile::ReadOnly))
+        {
+            QMessageBox::critical(this, tr("Error"), tr("Failed to open file: \"%1\"").arg(f.fileName()));
+            return;
+        }
+        contents = f.readAll();
     }
-    auto title = QFileInfo(f).baseName();
-    QByteArray data = f.readAll();
-    llvmSlot(type, title, data);
+
+    // Dispatch to the right handler
+    auto extension = file.completeSuffix();
+    if (extension == "bc" || extension == "ll")
+    {
+        llvmSlot("module", file.baseName(), contents);
+    }
+    else
+    {
+        QMessageBox::critical(this, tr("Error"), tr("%1 is not a recognized file extension.").arg(extension));
+    }
+}
+
+void MainWindow::noServer()
+{
+    mDialogs.clear();
+    close();
 }
 
 void MainWindow::closeEvent(QCloseEvent* event)
@@ -72,34 +90,11 @@ void MainWindow::llvmSlot(QString type, QString title, QByteArray data)
     //bitcodeDialog->activateWindow();
 }
 
-void MainWindow::on_action_MinimalExample_triggered()
-{
-    llvmResource(":/examples/LLVM/WhitePeacock/MinimalExample.bc");
-}
-
 void MainWindow::initializeThemes()
 {
-    auto selectedTheme = QSettings().value("Theme").toString();
     for (const auto& theme : QDir(":/themes").entryInfoList())
-    {
-        auto name = theme.baseName();
-        auto action = ui->menu_Theme->addAction(name);
-        action->setCheckable(true);
-
-        if (name == selectedTheme)
-            action->setChecked(true);
-
-        connect(action, &QAction::triggered, [this, theme, action]() {
-            QFile f(theme.filePath());
-            f.open(QFile::ReadOnly);
-            qApp->setStyleSheet(f.readAll());
-
-            QSettings().setValue("Theme", theme.baseName());
-            for (QAction* menuAction : ui->menu_Theme->actions())
-                menuAction->setChecked(false);
-            action->setChecked(true);
-        });
-    }
+        addThemeFile(theme);
+    addThemeFile(QFileInfo("REVIDE.css"));
 }
 
 void MainWindow::initializeExamples(const QDir& dir, QMenu* menu)
@@ -114,29 +109,34 @@ void MainWindow::initializeExamples(const QDir& dir, QMenu* menu)
         {
             auto action = menu->addAction(entry.baseName());
             connect(action, &QAction::triggered, [this, entry]() {
-                // Read the file contents
-                QByteArray contents;
-                {
-                    QFile f(entry.absoluteFilePath());
-                    if (!f.open(QFile::ReadOnly))
-                    {
-                        QMessageBox::critical(this, tr("Error"), tr("Failed to open resource file"));
-                        return;
-                    }
-                    contents = f.readAll();
-                }
-
-                // Dispatch to the right handler
-                auto extension = entry.completeSuffix();
-                if (extension == "bc" || extension == "ll")
-                {
-                    llvmSlot("module", entry.baseName(), contents);
-                }
-                else
-                {
-                    QMessageBox::critical(this, tr("Error"), tr("%1 is not a recognized example extension.").arg(extension));
-                }
+                loadFile(entry);
             });
         }
     }
+}
+void MainWindow::addThemeFile(const QFileInfo& theme)
+{
+    if(!theme.exists())
+        return;
+
+    auto action = ui->menu_Theme->addAction(theme.baseName());
+    action->setCheckable(true);
+
+    if (theme.filePath() == QSettings().value("Theme").toString())
+        action->setChecked(true);
+
+    connect(action, &QAction::triggered, [this, theme, action]() {
+        QFile f(theme.filePath());
+        if(!f.open(QFile::ReadOnly)) {
+            QMessageBox::critical(this, tr("Error"), tr("Failed to read theme file %1").arg(f.fileName()));
+            return;
+        }
+
+        qApp->setStyleSheet(f.readAll());
+        QSettings().setValue("Theme", f.fileName());
+
+        for (QAction* menuAction : ui->menu_Theme->actions())
+            menuAction->setChecked(false);
+        action->setChecked(true);
+    });
 }

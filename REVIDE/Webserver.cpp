@@ -2,8 +2,9 @@
 
 using namespace httplib;
 
-Webserver::Webserver(QObject* parent)
+Webserver::Webserver(int port, QObject* parent)
     : QThread(parent)
+    , mPort(port)
 {
     mServer = new Server();
 
@@ -40,7 +41,7 @@ Webserver::~Webserver()
 
 void Webserver::run()
 {
-    if (!mServer->listen("localhost", 1867))
+    if (!mServer->listen("localhost", mPort))
     {
         emit hello("listen :(");
     }

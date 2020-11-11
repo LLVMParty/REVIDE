@@ -2,25 +2,27 @@
 
 BitcodeDialog {
     qproperty-keywordColor: #333F47;
-    qproperty-instructionColor: #80B700;
-    qproperty-variableColor: #A34784;
-    qproperty-constantColor: #E90B55;
-    qproperty-integerTypeColor: #8799C4;
-    qproperty-complexPointerTypeColor: #8799C4;
-    qproperty-classColor: #800080;
-    qproperty-singleLineCommentColor: #FF0000;
-    qproperty-multiLineCommentColor: #FF0000;
-    qproperty-quotationColor: #465D68;
+    qproperty-instructionColor: #333F47;
+
+    qproperty-globalVariableColor: #1BA7B3;
+    qproperty-localVariableColor: #E90B55;
+    qproperty-constantColor: #A34784;
+    qproperty-integerTypeColor: #1BA7B3;
+    
+    qproperty-commentColor: #8799C4;
+    qproperty-metadataColor: #8799C4;
     qproperty-functionColor: #1BA7B3;
-    qproperty-alignColor: #333F47;
 }
 
 CodeEditor {
-    color: black;
+    font-family: "Courier New";
+    font-size: 15px;
+    font-weight: bold;
+    color: #000000;
     background-color: #fefff7;
 
-    qproperty-selectedLineHighlightColor: #f2edd7;
+    qproperty-selectedLineHighlightColor: #DFDBBE;
     qproperty-errorLineHighlightColor: #FF9999;
-    qproperty-lineNumberColor: #000000;
-    qproperty-lineNumberBackgroundColor: #dfdbbe;
+    qproperty-lineNumberColor: #8799C4;
+    qproperty-lineNumberBackgroundColor: #fefff7;
 }

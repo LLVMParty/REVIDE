@@ -3,234 +3,310 @@
 BitcodeHighlighter::BitcodeHighlighter(const BitcodeDialog* style, QTextDocument* parent)
     : QSyntaxHighlighter(parent)
 {
-    HighlightingRule rule;
+    refreshColors(style);
+}
 
-    keywordFormat.setForeground(style->keywordColor());
-    keywordFormat.setFontWeight(QFont::Bold);
-    const QString keywords[] = {
-        // https://github.com/compiler-explorer/compiler-explorer/blob/6eab83562af4c81269222fc0e7b12092884e0912/static/modes/llvm-ir-mode.js#L56
-        "acq_rel",
-        "acquire",
-        "addrspace",
-        "alias",
-        "align",
-        "alignstack",
-        "alwaysinline",
-        "appending",
-        "argmemonly",
-        "arm_aapcscc",
-        "arm_aapcs_vfpcc",
-        "arm_apcscc",
-        "asm",
-        "atomic",
-        "available_externally",
-        "blockaddress",
-        "builtin",
-        "byval",
-        "c",
-        "catch",
-        "caller",
-        "cc",
-        "ccc",
-        "cleanup",
-        "coldcc",
-        "comdat",
-        "common",
-        "constant",
-        "datalayout",
-        "declare",
-        "default",
-        "define",
-        "deplibs",
-        "dereferenceable",
-        "distinct",
-        "dllexport",
-        "dllimport",
-        "dso_local",
-        "dso_preemptable",
-        "except",
-        "external",
-        "externally_initialized",
-        "extern_weak",
-        "fastcc",
-        "filter",
-        "from",
-        "gc",
-        "global",
-        "hhvmcc",
-        "hhvm_ccc",
-        "hidden",
-        "initialexec",
-        "inlinehint",
-        "inreg",
-        "inteldialect",
-        "intel_ocl_bicc",
-        "internal",
-        "linkonce",
-        "linkonce_odr",
-        "localdynamic",
-        "localexec",
-        "local_unnamed_addr",
-        "minsize",
-        "module",
-        "monotonic",
-        "msp430_intrcc",
-        "musttail",
-        "naked",
-        "nest",
-        "noalias",
-        "nobuiltin",
-        "nocapture",
-        "noimplicitfloat",
-        "noinline",
-        "nonlazybind",
-        "nonnull",
-        "norecurse",
-        "noredzone",
-        "noreturn",
-        "nounwind",
-        "optnone",
-        "optsize",
-        "personality",
-        "private",
-        "protected",
-        "ptx_device",
-        "ptx_kernel",
-        "readnone",
-        "readonly",
-        "release",
-        "returned",
-        "returns_twice",
-        "sanitize_address",
-        "sanitize_memory",
-        "sanitize_thread",
-        "section",
-        "seq_cst",
-        "sideeffect",
-        "signext",
-        "syncscope",
-        "source_filename",
-        "speculatable",
-        "spir_func",
-        "spir_kernel",
-        "sret",
-        "ssp",
-        "sspreq",
-        "sspstrong",
-        "strictfp",
-        "swiftcc",
-        "tail",
-        "target",
-        "thread_local",
-        "to",
-        "triple",
-        "unnamed_addr",
-        "unordered",
-        "uselistorder",
-        "uselistorder_bb",
-        "uwtable",
-        "volatile",
-        "weak",
-        "weak_odr",
-        "within",
-        "writeonly",
-        "x86_64_sysvcc",
-        "win64cc",
-        "x86_fastcallcc",
-        "x86_stdcallcc",
-        "x86_thiscallcc",
-        "zeroext",
-        "label",
+static const char* keywords[] = {
+    // https://github.com/compiler-explorer/compiler-explorer/blob/6eab83562af4c81269222fc0e7b12092884e0912/static/modes/llvm-ir-mode.js#L56
+    "acq_rel",
+    "acquire",
+    "addrspace",
+    "alias",
+    "align",
+    "alignstack",
+    "alwaysinline",
+    "appending",
+    "argmemonly",
+    "arm_aapcscc",
+    "arm_aapcs_vfpcc",
+    "arm_apcscc",
+    "asm",
+    "atomic",
+    "available_externally",
+    "blockaddress",
+    "builtin",
+    "byval",
+    "c",
+    "catch",
+    "caller",
+    "cc",
+    "ccc",
+    "cleanup",
+    "coldcc",
+    "comdat",
+    "common",
+    "constant",
+    "datalayout",
+    "declare",
+    "default",
+    "define",
+    "deplibs",
+    "dereferenceable",
+    "distinct",
+    "dllexport",
+    "dllimport",
+    "dso_local",
+    "dso_preemptable",
+    "except",
+    "external",
+    "externally_initialized",
+    "extern_weak",
+    "fastcc",
+    "filter",
+    "from",
+    "gc",
+    "global",
+    "hhvmcc",
+    "hhvm_ccc",
+    "hidden",
+    "initialexec",
+    "inlinehint",
+    "inreg",
+    "inteldialect",
+    "intel_ocl_bicc",
+    "internal",
+    "linkonce",
+    "linkonce_odr",
+    "localdynamic",
+    "localexec",
+    "local_unnamed_addr",
+    "minsize",
+    "module",
+    "monotonic",
+    "msp430_intrcc",
+    "musttail",
+    "naked",
+    "nest",
+    "noalias",
+    "nobuiltin",
+    "nocapture",
+    "noimplicitfloat",
+    "noinline",
+    "nonlazybind",
+    "nonnull",
+    "norecurse",
+    "noredzone",
+    "noreturn",
+    "nounwind",
+    "optnone",
+    "optsize",
+    "personality",
+    "private",
+    "protected",
+    "ptx_device",
+    "ptx_kernel",
+    "readnone",
+    "readonly",
+    "release",
+    "returned",
+    "returns_twice",
+    "sanitize_address",
+    "sanitize_memory",
+    "sanitize_thread",
+    "section",
+    "seq_cst",
+    "sideeffect",
+    "signext",
+    "syncscope",
+    "source_filename",
+    "speculatable",
+    "spir_func",
+    "spir_kernel",
+    "sret",
+    "ssp",
+    "sspreq",
+    "sspstrong",
+    "strictfp",
+    "swiftcc",
+    "tail",
+    "target",
+    "thread_local",
+    "to",
+    "triple",
+    "unnamed_addr",
+    "unordered",
+    "uselistorder",
+    "uselistorder_bb",
+    "uwtable",
+    "volatile",
+    "weak",
+    "weak_odr",
+    "within",
+    "writeonly",
+    "x86_64_sysvcc",
+    "win64cc",
+    "x86_fastcallcc",
+    "x86_stdcallcc",
+    "x86_thiscallcc",
+    "zeroext",
+    "label",
 
-        // Additional keywords
-        "source_filename",
-        "nofree",
-        "willreturn",
-        "nsw",
-        "nuw",
-        "exact"
-    };
-    for (const QString& pattern : keywords)
+    // Additional keywords
+    "source_filename",
+    "nofree",
+    "willreturn",
+    "nsw",
+    "nuw",
+    "exact",
+    "any",
+    "immarg",
+};
+
+static const char* instructions[] = {
+    "add",
+    "load",
+    "store",
+    "and",
+    "or",
+    "xor",
+    "zext",
+    "call",
+    "switch",
+    "br",
+    "icmp",
+    "phi",
+    "sub",
+    "sext",
+    "shl",
+    "lshr",
+    "ashr",
+    "select",
+    "trunc",
+    "eq",
+    "ne",
+    "sgt",
+    "ret",
+    "ult",
+    "bitcast",
+    "getelementptr",
+    "inbounds",
+    "alloca",
+};
+
+void BitcodeHighlighter::refreshColors(const BitcodeDialog* style)
+{
+    highlightingRules.clear();
+
+    struct Format
     {
-        rule.pattern = QRegularExpression(QString("\\b%1\\b").arg(pattern));
-        rule.format = keywordFormat;
-        highlightingRules.append(rule);
+        Format(QTextCharFormat& format)
+            : format(format)
+        {
+        }
+
+        Format&& self() &
+        {
+            return std::move(*this);
+        }
+
+        Format&& italic() &&
+        {
+            format.setFontItalic(true);
+            return self();
+        }
+
+        Format&& bold() &&
+        {
+            format.setFontWeight(QFont::Bold);
+            return self();
+        }
+
+        Format&& color(const QColor& color) &&
+        {
+            format.setForeground(color);
+            return self();
+        }
+
+        Format&& color(const QColorWrapper& color) &&
+        {
+            format.setForeground(color());
+            return self();
+        }
+
+    private:
+        QTextCharFormat& format;
+    };
+
+    auto addRule = [this](const char* regex) {
+        highlightingRules.append({ QRegularExpression(regex), QTextCharFormat() });
+        if (!highlightingRules.back().pattern.isValid())
+        {
+            qFatal("Invalid regular expression");
+        }
+        return Format(highlightingRules.back().format);
+    };
+
+    // Rules added later can override previous rules (since they are applied in order)
+
+    // constants: 12, 0x33
+    addRule(R"regex(\b\d+\b)regex")
+        .color(style->constantColor);
+    addRule(R"regex((true|false|void|none|null))regex")
+        .color(style->constantColor);
+
+    // Keywords
+    {
+        QTextCharFormat keywordFormat;
+        keywordFormat.setForeground(style->keywordColor());
+
+        for (const QString& pattern : keywords)
+            highlightingRules.append({ QRegularExpression(QString("\\b%1\\b").arg(pattern)), keywordFormat });
     }
 
-    instructionFormat.setForeground(style->instructionColor());
-    instructionFormat.setFontWeight(QFont::Bold);
-    const QString instructions[] = {
-        "add", "load", "store", "and", "or", "xor", "zext", "call", "switch", "br", "icmp", "phi", "sub", "sext", "shl", "lshr", "ashr", "select", "trunc", "eq", "ne", "sgt", "ret", "ult", "bitcast", "getelementptr"
-    };
-    for (const QString& pattern : instructions)
+    // Instructions
     {
-        rule.pattern = QRegularExpression(QString("\\b%1\\b").arg(pattern));
-        rule.format = instructionFormat;
-        highlightingRules.append(rule);
+        QTextCharFormat instructionFormat;
+        instructionFormat.setForeground(style->instructionColor());
+        instructionFormat.setFontWeight(QFont::Bold);
+
+        for (const QString& pattern : instructions)
+            highlightingRules.append({ QRegularExpression(QString("\\b%1\\b").arg(pattern)), instructionFormat });
     }
 
-    variableFormat.setForeground(style->variableColor());
-    variableFormat.setFontWeight(QFont::Bold);
-    rule.pattern = QRegularExpression(QStringLiteral("%[0-9a-zA-Z\\._]+"));
-    rule.format = variableFormat;
-    highlightingRules.append(rule);
+    // global variables
+    addRule(R"regex((\s|^)[@$]"[^"]+")regex")
+        .bold()
+        .color(style->globalVariableColor);
 
-    constantFormat.setForeground(style->constantColor());
-    constantFormat.setFontWeight(QFont::Bold);
-    rule.pattern = QRegularExpression(QStringLiteral(" [0-9-]+"));
-    rule.format = constantFormat;
-    highlightingRules.append(rule);
+    addRule(R"regex((\s|^)[@$][-a-zA-Z$._0-9]+)regex")
+        .bold()
+        .color(style->globalVariableColor);
 
-    integerTypeFormat.setForeground(style->integerTypeColor());
-    integerTypeFormat.setFontWeight(QFont::Bold);
-    rule.pattern = QRegularExpression(QStringLiteral("i[1-9][0-9]?"));
-    rule.format = integerTypeFormat;
-    highlightingRules.append(rule);
+    // local variables
+    addRule(R"regex((\s|^)%"[^"]+")regex")
+        .bold()
+        .color(style->localVariableColor);
 
-    complexPointerTypeFormat.setForeground(style->complexPointerTypeColor());
-    complexPointerTypeFormat.setFontWeight(QFont::Bold);
-    rule.pattern = QRegularExpression(QStringLiteral("[%i]{1}[0-9a-zA-Z\\._]+\\*"));
-    rule.format = complexPointerTypeFormat;
-    highlightingRules.append(rule);
+    addRule(R"regex((\s|^)%[-a-zA-Z$._0-9]+)regex")
+        .bold()
+        .color(style->localVariableColor);
 
-    classFormat.setForeground(style->classColor());
-    classFormat.setFontWeight(QFont::Bold);
-    rule.pattern = QRegularExpression(QStringLiteral("\\bQ[A-Za-z]+\\b"));
-    rule.format = classFormat;
-    highlightingRules.append(rule);
+    // @function( and @"bla blah"(
+    addRule(R"regex(\s@"[^"]+"(?=\())regex")
+        .bold()
+        .color(style->functionColor);
 
-    singleLineCommentFormat.setForeground(style->singleLineCommentColor());
-    rule.pattern = QRegularExpression(QStringLiteral("//[^\n]*"));
-    rule.format = singleLineCommentFormat;
-    highlightingRules.append(rule);
+    addRule(R"regex(\s@[-a-zA-Z$._][-a-zA-Z$._0-9]*(?=\())regex")
+        .bold()
+        .color(style->functionColor);
 
-    multiLineCommentFormat.setForeground(style->multiLineCommentColor());
+    // i64
+    addRule(R"regex(i\d+)regex")
+        .color(style->integerTypeColor);
 
-    quotationFormat.setForeground(style->quotationColor());
-    rule.pattern = QRegularExpression(QStringLiteral("\".*\""));
-    rule.format = quotationFormat;
-    highlightingRules.append(rule);
+    // metadata
+    addRule(R"regex(!.+$)regex")
+        .color(style->metadataColor);
+    addRule(R"regex(, !)regex")
+        .color(style->metadataColor);
+    addRule(R"regex(^attributes #\d+ = .+$)regex")
+        .color(style->metadataColor);
+    addRule(R"regex( = "[^"]+"$)regex")
+        .color(style->metadataColor);
 
-    functionFormat.setFontItalic(true);
-    functionFormat.setFontWeight(QFont::Bold);
-    functionFormat.setForeground(style->functionColor());
-    rule.pattern = QRegularExpression(QStringLiteral("\\b[A-Za-z0-9_]+(?=\\()"));
-    rule.format = functionFormat;
-    highlightingRules.append(rule);
-    rule.pattern = QRegularExpression(QStringLiteral("@"));
-    rule.format = functionFormat;
-    highlightingRules.append(rule);
-
-    alignFormat.setForeground(style->alignColor());
-    rule.pattern = QRegularExpression(QStringLiteral("align [0-9-]+"));
-    rule.format = alignFormat;
-    highlightingRules.append(rule);
-    rule.pattern = QRegularExpression(QStringLiteral("#[0-9-]+"));
-    rule.format = alignFormat;
-    highlightingRules.append(rule);
-
-    commentStartExpression = QRegularExpression(QStringLiteral("/\\*"));
-    commentEndExpression = QRegularExpression(QStringLiteral("\\*/"));
+    // Line comments
+    addRule(R"regex(^;.+$)regex")
+        .color(style->commentColor);
 }
 
 void BitcodeHighlighter::highlightBlock(const QString& text)

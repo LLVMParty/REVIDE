@@ -21,7 +21,8 @@ public:
     MainWindow(QWidget* parent = nullptr);
     ~MainWindow();
 
-    void llvmResource(const char* resourcePath);
+    void loadFile(const QFileInfo& file);
+    void noServer();
 
 protected:
     void closeEvent(QCloseEvent* event) override;
@@ -30,9 +31,8 @@ private slots:
     void helloSlot(QString ip);
     void llvmSlot(QString type, QString title, QByteArray data);
 
-    void on_action_MinimalExample_triggered();
-
 private:
+    void addThemeFile(const QFileInfo& theme);
     void initializeThemes();
     void initializeExamples(const QDir& dir, QMenu* menu);
 

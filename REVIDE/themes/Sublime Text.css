@@ -1,0 +1,28 @@
+/* Based on Sublime Text's theme */
+
+BitcodeDialog {
+    qproperty-keywordColor: #F92472;
+    qproperty-instructionColor: #F92472;
+
+    qproperty-globalVariableColor: #FC9621;
+    qproperty-localVariableColor: #E7DB74;
+    qproperty-constantColor: #AC80FF;
+    qproperty-integerTypeColor: #67D8EF;
+    
+    qproperty-commentColor: #74705D;
+    qproperty-metadataColor: #74705D;
+    qproperty-functionColor: #FC9621;
+}
+
+CodeEditor {
+    font-family: "Courier New";
+    font-size: 15px;
+    font-weight: bold;
+    color: #F8F8F2;
+    background-color: #282923;
+
+    qproperty-selectedLineHighlightColor: #3A392F;
+    qproperty-errorLineHighlightColor: #FF9999;
+    qproperty-lineNumberColor: #90918B;
+    qproperty-lineNumberBackgroundColor: #282923;
+}

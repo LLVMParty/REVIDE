@@ -48,8 +48,7 @@
 **
 ****************************************************************************/
 
-#ifndef CODEEDITOR_H
-#define CODEEDITOR_H
+#pragma once
 
 #include <QPlainTextEdit>
 #include "Styled.h"
@@ -62,8 +61,6 @@ class QWidget;
 QT_END_NAMESPACE
 
 class LineNumberArea;
-
-//![codeeditordefinition]
 
 class CodeEditor : public QPlainTextEdit, Styled<CodeEditor>
 {
@@ -84,6 +81,7 @@ public:
 
 protected:
     void resizeEvent(QResizeEvent* event) override;
+    void changeEvent(QEvent* event) override;
 
 private slots:
     void updateLineNumberAreaWidth(int newBlockCount);
@@ -94,9 +92,6 @@ private:
     QWidget* lineNumberArea;
     int mErrorLine = -1;
 };
-
-//![codeeditordefinition]
-//![extraarea]
 
 class LineNumberArea : public QWidget
 {
@@ -121,7 +116,3 @@ protected:
 private:
     CodeEditor* codeEditor;
 };
-
-//![extraarea]
-
-#endif

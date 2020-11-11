@@ -49,25 +49,25 @@ class BitcodeDialog : public QDialog, Styled<BitcodeDialog>
 public:
     CSS_COLOR(keywordColor);
     CSS_COLOR(instructionColor);
-    CSS_COLOR(variableColor);
+    CSS_COLOR(globalVariableColor);
+    CSS_COLOR(localVariableColor);
     CSS_COLOR(constantColor);
     CSS_COLOR(integerTypeColor);
-    CSS_COLOR(complexPointerTypeColor);
-    CSS_COLOR(classColor);
-    CSS_COLOR(singleLineCommentColor);
-    CSS_COLOR(multiLineCommentColor);
-    CSS_COLOR(quotationColor);
+    CSS_COLOR(commentColor);
+    CSS_COLOR(metadataColor);
     CSS_COLOR(functionColor);
-    CSS_COLOR(alignColor);
-    CSS_COLOR(testColor);
 
 public:
     explicit BitcodeDialog(QWidget* parent = nullptr);
     ~BitcodeDialog();
     bool load(const QString& type, const QByteArray& data, QString& errorMessage);
 
+protected:
+    void changeEvent(QEvent* event) override;
+
 private slots:
     void on_buttonGodbolt_clicked();
+    void on_buttonHelp_clicked();
     void on_plainTextBitcode_cursorPositionChanged();
 
 private:

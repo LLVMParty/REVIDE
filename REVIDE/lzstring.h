@@ -1,5 +1,4 @@
-#ifndef LZSTRING_H
-#define LZSTRING_H
+#pragma once
 
 /*
  * Qt implementation of LZ-String, version 1.4.4.
@@ -31,5 +30,3 @@ private:
     template<typename GetNextValue>
     static QString _decompress(int length, int resetValue, GetNextValue getNextValue);
 };
-
-#endif // LZSTRING_H

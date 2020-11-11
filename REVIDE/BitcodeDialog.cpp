@@ -169,6 +169,8 @@ BitcodeDialog::BitcodeDialog(QWidget* parent)
     , mContext(new LLVMGlobalContext())
 {
     setWindowFlag(Qt::WindowContextHelpButtonHint, false);
+    setWindowFlag(Qt::WindowMaximizeButtonHint, true);
+    setWindowFlag(Qt::WindowMinimizeButtonHint, true);
     ui->setupUi(this);
 
     mHighlighter = new BitcodeHighlighter(this, ui->plainTextBitcode->document());
@@ -255,6 +257,11 @@ void BitcodeDialog::on_buttonGodbolt_clicked()
     QDesktopServices::openUrl(url);
 }
 
+void BitcodeDialog::on_buttonHelp_clicked()
+{
+    QDesktopServices::openUrl(QUrl("https://llvm.org/docs/LangRef.html#abstract"));
+}
+
 void BitcodeDialog::on_plainTextBitcode_cursorPositionChanged()
 {
     auto line = ui->plainTextBitcode->textCursor().block().firstLineNumber();
@@ -303,3 +310,19 @@ void BitcodeDialog::on_plainTextBitcode_cursorPositionChanged()
     }
     ui->lineEditStatus->setText(info);
 }
+
+void BitcodeDialog::changeEvent(QEvent* event)
+{
+    if (event->type() == QEvent::StyleChange)
+    {
+        if (mHighlighter)
+        {
+            ensurePolished();
+            mHighlighter->refreshColors(this);
+            mHighlighter->setDocument(nullptr);
+            mHighlighter->setDocument(ui->plainTextBitcode->document());
+        }
+    }
+    QDialog::changeEvent(event);
+}
+

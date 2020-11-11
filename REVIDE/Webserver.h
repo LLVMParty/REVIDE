@@ -8,7 +8,7 @@ class Webserver : public QThread
 {
     Q_OBJECT
 public:
-    Webserver(QObject* parent = nullptr);
+    Webserver(int port, QObject* parent = nullptr);
     ~Webserver();
     void run() override;
     void close();
@@ -19,4 +19,5 @@ signals:
 
 private:
     httplib::Server* mServer;
+    int mPort;
 };

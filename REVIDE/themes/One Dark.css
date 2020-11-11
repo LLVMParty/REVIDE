@@ -1,0 +1,28 @@
+/* https://github.com/joshdick/onedark.vim */
+
+BitcodeDialog {
+    qproperty-keywordColor: #C678DD;
+    qproperty-instructionColor: #C678DD;
+
+    qproperty-globalVariableColor: #62AEEF;
+    qproperty-localVariableColor: #E06B74;
+    qproperty-constantColor: #E5C07A;
+    qproperty-integerTypeColor: #98C379;
+    
+    qproperty-commentColor: #ABB2BF;
+    qproperty-metadataColor: #ABB2BF;
+    qproperty-functionColor: #62AEEF;
+}
+
+CodeEditor {
+    font-family: "Courier New";
+    font-size: 15px;
+    font-weight: bold;
+    color: white;
+    background-color: #282C33;
+
+    qproperty-selectedLineHighlightColor: #2C323C;
+    qproperty-errorLineHighlightColor: #FF9999;
+    qproperty-lineNumberColor: #ABB2BF;
+    qproperty-lineNumberBackgroundColor: #282C33;
+}

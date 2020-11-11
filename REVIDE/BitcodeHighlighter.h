@@ -15,19 +15,12 @@ class BitcodeHighlighter : public QSyntaxHighlighter
 
 public:
     BitcodeHighlighter(const BitcodeDialog* style, QTextDocument* parent = 0);
+    void refreshColors(const BitcodeDialog* style);
 
 protected:
     void highlightBlock(const QString& text) override;
 
 private:
-    QColor HEXColorToRGBColor(uint64_t HEXColor)
-    {
-        uint8_t RR = (HEXColor >> 16) & 0xff;
-        uint8_t GG = (HEXColor >> 8) & 0xff;
-        uint8_t BB = HEXColor & 0xff;
-        return QColor(RR, GG, BB);
-    }
-
     struct HighlightingRule
     {
         QRegularExpression pattern;
@@ -35,19 +28,7 @@ private:
     };
     QVector<HighlightingRule> highlightingRules;
 
-    QRegularExpression commentStartExpression;
-    QRegularExpression commentEndExpression;
-
-    QTextCharFormat keywordFormat;
-    QTextCharFormat classFormat;
-    QTextCharFormat singleLineCommentFormat;
     QTextCharFormat multiLineCommentFormat;
-    QTextCharFormat quotationFormat;
-    QTextCharFormat functionFormat;
-    QTextCharFormat instructionFormat;
-    QTextCharFormat variableFormat;
-    QTextCharFormat constantFormat;
-    QTextCharFormat integerTypeFormat;
-    QTextCharFormat complexPointerTypeFormat;
-    QTextCharFormat alignFormat;
+    QRegularExpression commentStartExpression = QRegularExpression(QStringLiteral("/\\*"));
+    QRegularExpression commentEndExpression = QRegularExpression(QStringLiteral("\\*/"));
 };

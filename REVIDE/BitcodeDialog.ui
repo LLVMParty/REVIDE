@@ -20,11 +20,6 @@
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
     <widget class="CodeEditor" name="plainTextBitcode">
-     <property name="font">
-      <font>
-       <family>Lucida Console</family>
-      </font>
-     </property>
      <property name="lineWrapMode">
       <enum>QPlainTextEdit::NoWrap</enum>
      </property>
@@ -48,6 +43,13 @@
       <widget class="QPushButton" name="buttonGodbolt">
        <property name="text">
         <string>Godbolt</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="buttonHelp">
+       <property name="text">
+        <string>&amp;Help</string>
        </property>
       </widget>
      </item>
