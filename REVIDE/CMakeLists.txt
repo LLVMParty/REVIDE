@@ -50,11 +50,11 @@ if(TARGET Qt5::windeployqt)
     )
 
     # copy deployment directory during installation
-    #install(
-    #    DIRECTORY
-    #    "${CMAKE_CURRENT_BINARY_DIR}/windeployqt/"
-    #    DESTINATION ${FOO_INSTALL_RUNTIME_DESTINATION}
-    #)
+    install(
+        DIRECTORY
+        "${CMAKE_CURRENT_BINARY_DIR}/windeployqt/"
+        DESTINATION bin
+    )
 endif()
 
 # https://www.reddit.com/r/cmake/comments/aewn5s/is_it_a_good_idea_to_use_cmake_include_current/ee534og?utm_source=share&utm_medium=web2x
@@ -65,6 +65,8 @@ target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_20)
 
 # Compile a GUI application
 #target_link_options(${PROJECT_NAME} PRIVATE /SUBSYSTEM:WINDOWS)
+
+install(TARGETS ${PROJECT_NAME} RUNTIME)
 
 # Set the plugin as the startup project
 set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${PROJECT_NAME})
