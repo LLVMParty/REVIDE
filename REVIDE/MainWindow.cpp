@@ -44,7 +44,7 @@ void MainWindow::loadFile(const QFileInfo& file)
     }
 
     // Dispatch to the right handler
-    auto extension = file.completeSuffix();
+    auto extension = file.suffix();
     if (extension == "bc" || extension == "ll")
     {
         llvmSlot("module", file.baseName(), contents);
