@@ -70,7 +70,7 @@ inline void Dump(llvm::Module& Module, const std::string& title = std::string())
     llvm::raw_string_ostream rso(str);
     Module.print(rso, nullptr, false, true);
 
-    httplib::Client client("localhost", 1867);
+    httplib::Client client("localhost", 13337);
     std::string path("/llvm?type=module&title=");
     path += httplib::detail::encode_url(title);
     str = httplib::detail::base64_encode(str);

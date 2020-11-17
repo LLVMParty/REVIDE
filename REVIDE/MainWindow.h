@@ -18,7 +18,7 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    MainWindow(QWidget* parent = nullptr);
+    MainWindow(int port, QWidget* parent = nullptr);
     ~MainWindow();
 
     void loadFile(const QFileInfo& file);
@@ -28,7 +28,7 @@ protected:
     void closeEvent(QCloseEvent* event) override;
 
 private slots:
-    void helloSlot(QString ip);
+    void helloSlot(QString message);
     void llvmSlot(QString type, QString title, QByteArray data);
 
 private:

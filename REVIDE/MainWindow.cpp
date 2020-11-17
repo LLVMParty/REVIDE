@@ -7,7 +7,7 @@
 #include <QDir>
 #include <QSettings>
 
-MainWindow::MainWindow(QWidget* parent)
+MainWindow::MainWindow(int port, QWidget* parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
@@ -17,7 +17,7 @@ MainWindow::MainWindow(QWidget* parent)
     initializeExamples(QDir(":/examples"), ui->menu_Examples);
 
     // Start the server
-    mWebserver = new Webserver(QSettings().value("Port", 1337).toInt(), this);
+    mWebserver = new Webserver(port, this);
     connect(mWebserver, &Webserver::hello, this, &MainWindow::helloSlot);
     connect(mWebserver, &Webserver::llvm, this, &MainWindow::llvmSlot);
     mWebserver->start();
@@ -68,9 +68,9 @@ void MainWindow::closeEvent(QCloseEvent* event)
     QMainWindow::closeEvent(event);
 }
 
-void MainWindow::helloSlot(QString ip)
+void MainWindow::helloSlot(QString message)
 {
-    ui->plainTextLog->appendPlainText(QString("Hello from %1\n").arg(ip));
+    ui->plainTextLog->appendPlainText(message);
 }
 
 void MainWindow::llvmSlot(QString type, QString title, QByteArray data)

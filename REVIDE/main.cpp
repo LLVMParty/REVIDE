@@ -24,9 +24,12 @@ int main(int argc, char* argv[])
     parser.setApplicationDescription("REVerse engineering IDE");
     parser.addHelpOption();
     parser.addVersionOption();
-    parser.addPositionalArgument("files", QCoreApplication::translate("main", "File to open, optionally"), "[files...]");
-    QCommandLineOption noServer("noserver", QCoreApplication::translate("main", "Don't start the server and show the main window"));
-    parser.addOption(noServer);
+    QCommandLineOption paramNoServer("noserver", QCoreApplication::translate("main", "Don't start the server and show the main window"));
+    parser.addOption(paramNoServer);
+    int port = 13337;
+    QCommandLineOption paramPort("port", QCoreApplication::translate("main", "Port to listen on (defaults to %1)").arg(port), "port");
+    parser.addOption(paramPort);
+    parser.addPositionalArgument("files", QCoreApplication::translate("main", "File(s) to open, optionally"), "[files...]");
     parser.process(app);
 
     // Set font to alias per default
@@ -61,8 +64,14 @@ int main(int argc, char* argv[])
         // TODO: if stylesheet parsing fails Qt continues with a warning
     }
 
+    // Handle a custom port
+    if(parser.isSet(paramPort))
+        port = parser.value(paramPort).toInt();
+    else
+        port = QSettings().value("Port", port).toInt();
+
     // Create main window
-    MainWindow w;
+    MainWindow w(port);
 
     // Load the files specified on the command line
     // TODO: use http requests when another instance is already open
@@ -70,7 +79,7 @@ int main(int argc, char* argv[])
         w.loadFile(file);
 
     // Handle the --noserver command line
-    if(parser.isSet(noServer))
+    if(parser.isSet(paramNoServer))
         w.noServer();
     else
         w.show();

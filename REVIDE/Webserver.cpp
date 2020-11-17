@@ -9,7 +9,7 @@ Webserver::Webserver(int port, QObject* parent)
     mServer = new Server();
 
     mServer->Get("/hi", [this](const Request& req, Response& res) {
-        emit hello(QString::fromStdString(req.remote_addr));
+        emit hello(tr("Hello from %1").arg(QString::fromStdString(req.remote_addr)));
     });
 
     mServer->Post("/llvm", [this](const Request& req, Response& res) {
@@ -43,7 +43,7 @@ void Webserver::run()
 {
     if (!mServer->listen("localhost", mPort))
     {
-        emit hello("listen :(");
+        emit hello(tr("Failed to listen on localhost:%1").arg(mPort));
     }
 }
 
