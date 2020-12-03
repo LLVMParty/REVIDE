@@ -15,8 +15,8 @@ BitcodeDialog {
 }
 
 CodeEditor {
-    font-family: "Courier New";
-    font-size: 15px;
+    font-family: "Gintronic, Consolas";
+    font-size: 12px;
     font-weight: bold;
     color: white;
     background-color: #282C33;

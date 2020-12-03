@@ -52,6 +52,7 @@
 
 #include <QPainter>
 #include <QTextBlock>
+#include <QRegularExpression>
 
 CodeEditor::CodeEditor(QWidget* parent)
     : QPlainTextEdit(parent)
@@ -143,6 +144,32 @@ void CodeEditor::highlightCurrentLine()
         selection.cursor.setPosition(document()->findBlockByLineNumber(mErrorLine - 1).position());
         extraSelections.append(selection);
     }
+
+    #if 0
+    {
+        QTextCursor cursor = textCursor();
+        cursor.select(QTextCursor::WordUnderCursor);
+    
+        auto plainText = toPlainText();
+        auto selectionStart = cursor.selectionStart();
+        auto selectionEnd = cursor.selectionEnd();
+        auto word = plainText.mid(selectionStart, selectionEnd - selectionStart);
+        if(!word.isEmpty())
+        {
+            QRegularExpressionMatchIterator matchIterator = QRegularExpression(word).globalMatch(plainText);
+            while (matchIterator.hasNext())
+            {
+                QRegularExpressionMatch match = matchIterator.next();
+                QTextEdit::ExtraSelection currentWord;
+                currentWord.format.setFontUnderline(true);
+                cursor.setPosition(match.capturedStart(), QTextCursor::MoveAnchor);
+                cursor.setPosition(match.capturedStart() + match.capturedLength(), QTextCursor::KeepAnchor);
+                currentWord.cursor = cursor;
+                extraSelections.append(currentWord);
+            }
+        }
+    }
+    #endif
 
     setExtraSelections(extraSelections);
 }

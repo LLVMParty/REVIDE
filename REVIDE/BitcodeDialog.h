@@ -4,6 +4,7 @@
 #include "Styled.h"
 
 class BitcodeHighlighter;
+class FunctionDialog;
 
 namespace Ui
 {
@@ -64,6 +65,7 @@ public:
 
 protected:
     void changeEvent(QEvent* event) override;
+    void closeEvent(QCloseEvent* event) override;
 
 private slots:
     void on_buttonGodbolt_clicked();
@@ -75,7 +77,9 @@ private:
     LLVMGlobalContext* mContext = nullptr;
     BitcodeHighlighter* mHighlighter = nullptr;
     QVector<AnnotatedLine> mAnnotatedLines;
+    QVector<int> mFunctionLineMap;
     QString mErrorMessage = "index out of bounds";
     int mErrorLine = -1, mErrorColumn = -1;
+    FunctionDialog* mFunctionDialog;
 };
 

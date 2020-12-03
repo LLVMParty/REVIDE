@@ -13,6 +13,10 @@ int main(int argc, char* argv[])
     setvbuf(stdout, nullptr, _IONBF, 0);
     setvbuf(stderr, nullptr, _IONBF, 0);
 
+    // Hopefully enable high DPI support
+    QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+    QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
+
     // Create application
     QApplication app(argc, argv);
     QApplication::setOrganizationName("LLVMParty");
@@ -46,14 +50,14 @@ int main(int argc, char* argv[])
         const QString themeKey("Theme");
         auto themeFile = settings.value(themeKey).toString();
         const auto defaultTheme = ":/themes/Light.css";
-        if(themeFile.isEmpty())
+        if (themeFile.isEmpty())
         {
             themeFile = defaultTheme;
             settings.setValue(themeKey, themeFile);
             settings.sync();
         }
         QFile f(themeFile);
-        if(!f.open(QFile::ReadOnly))
+        if (!f.open(QFile::ReadOnly))
         {
             f.setFileName(defaultTheme);
             f.open(QFile::ReadOnly);
@@ -65,7 +69,7 @@ int main(int argc, char* argv[])
     }
 
     // Handle a custom port
-    if(parser.isSet(paramPort))
+    if (parser.isSet(paramPort))
         port = parser.value(paramPort).toInt();
     else
         port = QSettings().value("Port", port).toInt();
@@ -75,11 +79,11 @@ int main(int argc, char* argv[])
 
     // Load the files specified on the command line
     // TODO: use http requests when another instance is already open
-    for(const auto& file : parser.positionalArguments())
+    for (const auto& file : parser.positionalArguments())
         w.loadFile(file);
 
     // Handle the --noserver command line
-    if(parser.isSet(paramNoServer))
+    if (parser.isSet(paramNoServer))
         w.noServer();
     else
         w.show();
@@ -87,3 +91,24 @@ int main(int argc, char* argv[])
     // Run application
     return QApplication::exec();
 }
+
+#ifdef WIN32
+int WINAPI CALLBACK WinMain(
+    _In_ HINSTANCE hInstance,
+    _In_opt_ HINSTANCE hPrevInstance,
+    _In_ LPSTR lpCmdLine,
+    _In_ int nShowCmd)
+{
+    // https://utf8everywhere.org/
+    int argc = 0;
+    auto argv = CommandLineToArgvW(GetCommandLineW(), &argc);
+    std::vector<QByteArray> argv_utf8;
+    for (int i = 0; i < argc; i++)
+        argv_utf8.push_back(QString::fromUtf16((const char16_t*)argv[i]).toUtf8());
+    LocalFree(argv);
+    std::vector<char*> argv_main;
+    for (auto& arg : argv_utf8)
+        argv_main.push_back(arg.data());
+    return main(argc, argv_main.data());
+}
+#endif // WIN32

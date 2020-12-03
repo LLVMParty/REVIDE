@@ -1,6 +1,8 @@
 #include "BitcodeDialog.h"
 #include "ui_BitcodeDialog.h"
 #include "BitcodeHighlighter.h"
+#include "FunctionDialog.h"
+#include "AbstractFunctionList.h"
 
 #include <llvm/IR/Module.h>
 #include <llvm/IR/AssemblyAnnotationWriter.h>
@@ -14,6 +16,8 @@
 #include <sstream>
 
 #include <QDesktopServices>
+#include <QMessageBox>
+#include <QDebug>
 
 struct LineAnnotationWriter : llvm::AssemblyAnnotationWriter
 {
@@ -63,6 +67,7 @@ struct LLVMGlobalContext
 {
     llvm::LLVMContext Context;
     std::shared_ptr<llvm::Module> Module;
+    std::vector<llvm::Function*> Functions;
 
     LLVMGlobalContext() = default;
 
@@ -75,8 +80,8 @@ struct LLVMGlobalContext
         llvm::StringRef sr(data.constData(), data.size());
         auto buf = llvm::MemoryBuffer::getMemBuffer(sr, "", false);
         llvm::SMDiagnostic Err;
-        auto module = parseIR(*buf, Err, this->Context);
-        if (!module)
+        auto irModule = parseIR(*buf, Err, Context);
+        if (!irModule)
         {
             std::stringstream ss;
             errorLine = Err.getLineNo();
@@ -95,7 +100,10 @@ struct LLVMGlobalContext
             return false;
         }
         errorMessage.clear();
-        this->Module = std::move(module);
+        Module = std::move(irModule);
+        Functions.clear();
+        for (auto& function : Module->functions())
+            Functions.push_back(&function);
         return true;
     }
 
@@ -174,6 +182,18 @@ BitcodeDialog::BitcodeDialog(QWidget* parent)
     ui->setupUi(this);
 
     mHighlighter = new BitcodeHighlighter(this, ui->plainTextBitcode->document());
+    mFunctionDialog = new FunctionDialog(this);
+    mFunctionDialog->show();
+    connect(mFunctionDialog, &FunctionDialog::functionClicked, [this](int index) {
+        mContext->Module->getFunctionList();
+        QString name = mContext->Functions[index]->getName().str().c_str();
+        auto line = mFunctionLineMap[index];
+        auto block = ui->plainTextBitcode->document()->findBlockByNumber(line);
+        ui->plainTextBitcode->moveCursor(QTextCursor::End);
+        ui->plainTextBitcode->setTextCursor(QTextCursor(block.previous()));
+        ui->plainTextBitcode->setTextCursor(QTextCursor(block));
+        //QMessageBox::information(this, "clicked", QString("%1: %2").arg(line).arg(name));
+    });
 }
 
 BitcodeDialog::~BitcodeDialog()
@@ -201,9 +221,32 @@ bool BitcodeDialog::load(const QString& type, const QByteArray& data, QString& e
         mAnnotatedLines = mContext->Dump();
         QString text;
         for (const auto& annotatedLine : mAnnotatedLines)
+        {
             text += annotatedLine.line + "\n";
-        text.chop(1);
+            if (annotatedLine.annotation.type == AnnotationType::Function)
+            {
+                auto line = annotatedLine.annotation.line;
+                if (!mFunctionLineMap.isEmpty() && mFunctionLineMap.back() == line)
+                    mFunctionLineMap.back() = line;
+                else
+                    mFunctionLineMap.push_back(annotatedLine.annotation.line);
+            }
+        }
+        text.chop(1); // remove the last \n
+        ui->plainTextBitcode->clear();
+        //auto cursor = ui->plainTextBitcode->textCursor();
+        //cursor.beginEditBlock();
+        //cursor.insertBlock();
+        //cursor.insertText(text);
+        //cursor.endEditBlock();
         ui->plainTextBitcode->setPlainText(text);
+        //ui->plainTextBitcode->appendPlainText(text);
+        QStringList functionList;
+        functionList.reserve(mContext->Functions.size());
+        for (const auto& function : mContext->Functions)
+            functionList << function->getName().str().c_str();
+        mFunctionDialog->setFunctionList(functionList);
+        qDebug() << "blockCount" << ui->plainTextBitcode->blockCount();
         return true;
     }
     else
@@ -302,6 +345,17 @@ void BitcodeDialog::on_plainTextBitcode_cursorPositionChanged()
         {
             auto instruction = (llvm::Instruction*)annotation.ptr;
             info2 = QString(", opcode: %1").arg(instruction->getOpcodeName());
+            //auto x = instruction->metadata
+            auto metadata = instruction->getMetadata("UNKNOWN");
+            if (metadata)
+            {
+                std::string ss;
+                auto x = llvm::raw_string_ostream(ss);
+                metadata->print(x, instruction->getModule(), true);
+                qDebug() << ss.c_str();
+                //metadata->dump();
+                //instruction->getMetadata()
+            }
         }
         break;
         }
@@ -326,3 +380,8 @@ void BitcodeDialog::changeEvent(QEvent* event)
     QDialog::changeEvent(event);
 }
 
+void BitcodeDialog::closeEvent(QCloseEvent* event)
+{
+    mFunctionDialog->close();
+    return QDialog::closeEvent(event);
+}

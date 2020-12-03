@@ -181,6 +181,10 @@ static const char* instructions[] = {
     "getelementptr",
     "inbounds",
     "alloca",
+    "mul",
+    "urem",
+    "ptrtoint",
+    "inttoptr",
 };
 
 void BitcodeHighlighter::refreshColors(const BitcodeDialog* style)
