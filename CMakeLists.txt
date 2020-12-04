@@ -11,7 +11,21 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/CMake)
 
 # LLVM wrapper
+set(CMAKE_FOLDER "Dependencies/LLVM")
 include(LLVM)
+
+set(CMAKE_FOLDER "Dependencies")
+add_subdirectory(Dependencies)
+unset(CMAKE_FOLDER)
+
+# Visual Studio generator specific flags
+if (CMAKE_GENERATOR MATCHES "Visual Studio")
+    # HACK: DO NOT this to add compiler flags/definitions, use target_compile_options on a
+    # target instead https://cmake.org/cmake/help/latest/command/target_compile_options.html
+
+    # Enable multiprocessor compilation
+    add_compile_options(/MP)
+endif()
 
 # MSVC-specific options
 if(MSVC)
@@ -30,5 +44,7 @@ endif()
 
 add_subdirectory(REVIDE)
 add_subdirectory(REVIDE-Helpers)
+
+set_property(DIRECTORY ${CMAKE_CURRENT_LIST_DIR} PROPERTY VS_STARTUP_PROJECT REVIDE)
 
 # TODO: https://github.com/LLVMParty/ExtensionRepository/edit/main/extensions.txt

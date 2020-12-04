@@ -1,6 +1,7 @@
 #include "MainWindow.h"
 #include "ui_MainWindow.h"
 #include "BitcodeDialog.h"
+#include "VTILDialog.h"
 #include "ui_MainWindow.h"
 
 #include <QFileDialog>
@@ -62,6 +63,10 @@ void MainWindow::loadFile(const QFileInfo& file)
     {
         llvmSlot("module", file.baseName(), contents);
     }
+    else if (extension == "vtil")
+    {
+        vtilSlot(file.baseName(), contents);
+    }
     else
     {
         QMessageBox::critical(this, tr("Error"), tr("%1 is not a recognized file extension.").arg(extension));
@@ -101,6 +106,21 @@ void MainWindow::llvmSlot(QString type, QString title, QByteArray data)
     bitcodeDialog->show();
     //bitcodeDialog->raise();
     //bitcodeDialog->activateWindow();
+}
+
+void MainWindow::vtilSlot(QString title, QByteArray data)
+{
+    ui->plainTextLog->appendPlainText(QString("vtil routine (%1), %2 bytes").arg(title).arg(data.length()));
+    auto dialog = new VTILDialog(nullptr);
+    if (!title.isEmpty())
+        dialog->setWindowTitle(QString("[%1] %2 (%3)").arg(mDialogs.size() + 1).arg(dialog->windowTitle()).arg(title));
+    QString errorMessage;
+    if (!dialog->load(data, errorMessage))
+    {
+        ui->plainTextLog->appendPlainText(QString("Failed to load VTIL routine: %1").arg(errorMessage));
+    }
+    mDialogs.append(dialog);
+    dialog->show();
 }
 
 void MainWindow::initializeThemes()

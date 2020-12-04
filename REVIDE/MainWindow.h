@@ -30,6 +30,7 @@ protected:
 private slots:
     void helloSlot(QString message);
     void llvmSlot(QString type, QString title, QByteArray data);
+    void vtilSlot(QString title, QByteArray data);
 
 private:
     void addThemeFile(const QFileInfo& theme);

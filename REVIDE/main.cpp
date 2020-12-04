@@ -93,6 +93,7 @@ int main(int argc, char* argv[])
 }
 
 #ifdef WIN32
+#include <shellapi.h>
 int WINAPI CALLBACK WinMain(
     _In_ HINSTANCE hInstance,
     _In_opt_ HINSTANCE hPrevInstance,
