@@ -36,7 +36,7 @@ file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS *.cpp *.hpp *.h *.qrc *.ui *.rc)
 
 add_executable(${PROJECT_NAME} ${SOURCES})
 
-target_link_libraries(${PROJECT_NAME} PRIVATE Qt5::Widgets Qt5::Svg LLVM NativeLifters-Core)
+target_link_libraries(${PROJECT_NAME} PRIVATE Qt5::Widgets Qt5::Svg LLVM NativeLifters-Core KDAB::kddockwidgets)
 
 if(TARGET Qt5::windeployqt)
     # execute windeployqt in a tmp directory after build
@@ -56,6 +56,13 @@ if(TARGET Qt5::windeployqt)
         DESTINATION bin
     )
 endif()
+
+# Copy KDDockWidgets in the build directory (for debugging purposes)
+add_custom_command(TARGET ${PROJECT_NAME}
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:KDAB::kddockwidgets>" "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:KDAB::kddockwidgets_multisplitter>" "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
+)
 
 # https://www.reddit.com/r/cmake/comments/aewn5s/is_it_a_good_idea_to_use_cmake_include_current/ee534og?utm_source=share&utm_medium=web2x
 target_include_directories(${PROJECT_NAME} PRIVATE "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>")

@@ -76,6 +76,7 @@ int main(int argc, char* argv[])
 
     // Create main window
     MainWindow w(port);
+    w.resize(800, 600);
 
     // Load the files specified on the command line
     // TODO: use http requests when another instance is already open

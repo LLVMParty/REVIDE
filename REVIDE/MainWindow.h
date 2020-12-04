@@ -4,16 +4,15 @@
 #include <QList>
 #include <QDialog>
 #include <QDir>
+#include <QPlainTextEdit>
+#include <QAction>
+#include <QMenu>
+
 #include "Webserver.h"
+#include <kddockwidgets/DockWidget.h>
+#include <kddockwidgets/MainWindow.h>
 
-QT_BEGIN_NAMESPACE
-namespace Ui
-{
-class MainWindow;
-}
-QT_END_NAMESPACE
-
-class MainWindow : public QMainWindow
+class MainWindow : public KDDockWidgets::MainWindow
 {
     Q_OBJECT
 
@@ -38,7 +37,12 @@ private:
     void initializeExamples(const QDir& dir, QMenu* menu);
 
 private:
-    Ui::MainWindow* ui = nullptr;
     Webserver* mWebserver = nullptr;
     QList<QDialog*> mDialogs;
+
+    QMenu* menu_Examples = nullptr;
+    QMenu* menu_File = nullptr;
+    QAction* action_Open = nullptr;
+    QMenu* menu_Theme = nullptr;
+    QPlainTextEdit* plainTextLog = nullptr;
 };

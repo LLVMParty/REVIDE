@@ -1,6 +1,15 @@
 # https://github.com/TheLartians/CPM.cmake/releases
 include(CPM.cmake)
 
+# Add KDDockWidgets dependency
+set(KDDockWidgets_EXAMPLES OFF CACHE BOOL "")
+set(KDDockWidgets_STATIC OFF CACHE BOOL "")
+CPMAddPackage(
+	NAME KDDockWidgets
+	VERSION 1.1.0
+	GITHUB_REPOSITORY LLVMParty/KDDockWidgets
+)
+
 # Add VTIL-Core dependency
 CPMAddPackage(
 	NAME VTIL-Core
