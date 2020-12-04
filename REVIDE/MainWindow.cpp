@@ -1,6 +1,9 @@
 #include "MainWindow.h"
+#include "ui_MainWindow.h"
 #include "BitcodeDialog.h"
 #include "ui_MainWindow.h"
+
+#include <QFileDialog>
 #include <QCryptographicHash>
 #include <QMessageBox>
 #include <QFileInfo>
@@ -21,6 +24,16 @@ MainWindow::MainWindow(int port, QWidget* parent)
     connect(mWebserver, &Webserver::hello, this, &MainWindow::helloSlot);
     connect(mWebserver, &Webserver::llvm, this, &MainWindow::llvmSlot);
     mWebserver->start();
+
+    // File -> Open
+    connect(ui->action_Open, &QAction::triggered, [this]() {
+        // TODO: save this directory in settings (project directory)
+        static QString dir = "projects";
+        auto irFile = QFileDialog::getOpenFileName(this, "Caption", dir, "REVIDE (*.bc *.ll *.vtil);;All Files (*)");
+        if (irFile.isEmpty())
+            return;
+        loadFile(QFileInfo(irFile));
+    });
 }
 
 MainWindow::~MainWindow()
@@ -116,7 +129,7 @@ void MainWindow::initializeExamples(const QDir& dir, QMenu* menu)
 }
 void MainWindow::addThemeFile(const QFileInfo& theme)
 {
-    if(!theme.exists())
+    if (!theme.exists())
         return;
 
     auto action = ui->menu_Theme->addAction(theme.baseName());
@@ -127,7 +140,8 @@ void MainWindow::addThemeFile(const QFileInfo& theme)
 
     connect(action, &QAction::triggered, [this, theme, action]() {
         QFile f(theme.filePath());
-        if(!f.open(QFile::ReadOnly)) {
+        if (!f.open(QFile::ReadOnly))
+        {
             QMessageBox::critical(this, tr("Error"), tr("Failed to read theme file %1").arg(f.fileName()));
             return;
         }

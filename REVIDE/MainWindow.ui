@@ -49,6 +49,13 @@
      <string>&amp;Theme</string>
     </property>
    </widget>
+   <widget class="QMenu" name="menu_File">
+    <property name="title">
+     <string>&amp;File</string>
+    </property>
+    <addaction name="action_Open"/>
+   </widget>
+   <addaction name="menu_File"/>
    <addaction name="menu_Examples"/>
    <addaction name="menu_Theme"/>
   </widget>
@@ -65,6 +72,11 @@
   <action name="actionDark">
    <property name="text">
     <string>Dark</string>
+   </property>
+  </action>
+  <action name="action_Open">
+   <property name="text">
+    <string>&amp;Open</string>
    </property>
   </action>
  </widget>
