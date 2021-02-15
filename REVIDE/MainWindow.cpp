@@ -35,6 +35,9 @@ MainWindow::MainWindow(int port, QWidget* parent)
             return;
         loadFile(QFileInfo(irFile));
     });
+    connect(ui->action_About, &QAction::triggered, [this]() {
+        QMessageBox::information(this, tr("About"), tr("REVIDE (unreleased development version)\n\nCreated by: Duncan Ogilvie\n\nKeep private for now!"));
+    });
 }
 
 MainWindow::~MainWindow()

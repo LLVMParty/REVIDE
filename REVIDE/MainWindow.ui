@@ -55,9 +55,16 @@
     </property>
     <addaction name="action_Open"/>
    </widget>
+   <widget class="QMenu" name="menu_Help">
+    <property name="title">
+     <string>&amp;Help</string>
+    </property>
+    <addaction name="action_About"/>
+   </widget>
    <addaction name="menu_File"/>
    <addaction name="menu_Examples"/>
    <addaction name="menu_Theme"/>
+   <addaction name="menu_Help"/>
   </widget>
   <action name="action_MinimalExample">
    <property name="text">
@@ -77,6 +84,11 @@
   <action name="action_Open">
    <property name="text">
     <string>&amp;Open</string>
+   </property>
+  </action>
+  <action name="action_About">
+   <property name="text">
+    <string>&amp;About</string>
    </property>
   </action>
  </widget>
