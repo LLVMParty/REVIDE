@@ -20,6 +20,13 @@ VTILDialog::VTILDialog(QWidget* parent)
     setWindowFlag(Qt::WindowMinimizeButtonHint, true);
     ui->setupUi(this);
 
+    // TODO: use Qt stylesheets for this
+    QFont editorFont("Gintronic, Consolas", 8, QFont::Weight::Bold);
+    ui->editorBitcode->setFont(editorFont);
+    ui->editorBitcode->setMarginsFont(editorFont);
+    ui->editorBitcode->setMarginLineNumbers(0, true);
+    ui->editorBitcode->setMarginWidth(0, "dupaaa");
+
     mFunctionDialog = new FunctionDialog(this);
     //mFunctionDialog->show();
     connect(mFunctionDialog, &FunctionDialog::functionClicked, [this](int index) {
@@ -282,7 +289,7 @@ bool VTILDialog::load(const QByteArray& data, QString& errorMessage)
     vtil::deserialize(dataStream, rtn);
     vtil_highlighter highlighter;
     highlighter.dump(rtn);
-    ui->plainTextBitcode->setPlainText(QString::fromStdString(highlighter.output));
+    ui->editorBitcode->setText(QString::fromStdString(highlighter.output));
     return true;
 }
 

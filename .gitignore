@@ -2,4 +2,3 @@ build*/
 CMakeLists.txt.user
 .idea/
 cmake-build-*/
-/Dependencies/QScintilla-2.11.6/

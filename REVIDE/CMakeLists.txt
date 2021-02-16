@@ -4,7 +4,15 @@ file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS *.cpp *.hpp *.h *.qrc *.ui *.rc)
 
 add_executable(${PROJECT_NAME} ${SOURCES})
 
-target_link_libraries(${PROJECT_NAME} PRIVATE Qt5::Widgets Qt5::Svg LLVM NativeLifters-Core)
+#source_group(TREE ${PROJECT_SOURCE_DIR} FILES ${SOURCES})
+
+target_link_libraries(${PROJECT_NAME} PRIVATE
+    Qt5::Widgets
+    Qt5::Svg
+    QScintilla
+    LLVM
+    NativeLifters-Core
+)
 
 if(TARGET Qt5::windeployqt)
     # execute windeployqt in a tmp directory after build

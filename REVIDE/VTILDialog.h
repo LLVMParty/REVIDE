@@ -2,6 +2,7 @@
 
 #include <QDialog>
 #include "Styled.h"
+#include <Qsci/qsciscintilla.h>
 
 class BitcodeHighlighter;
 class FunctionDialog;
