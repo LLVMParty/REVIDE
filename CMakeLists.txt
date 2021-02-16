@@ -7,12 +7,13 @@ project(REVIDE-Project)
 # Enable solution folder support
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-# Append the CMake module search path so we can use our own modules
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/CMake)
+# Prepend the CMake module search path so we can use our own modules
+list(PREPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/CMake)
 
 # LLVM wrapper
 set(CMAKE_FOLDER "Dependencies/LLVM")
 include(LLVM)
+include(Qt)
 
 set(CMAKE_FOLDER "Dependencies")
 add_subdirectory(Dependencies)
