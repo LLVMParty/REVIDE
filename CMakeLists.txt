@@ -46,6 +46,13 @@ endif()
 add_subdirectory(REVIDE)
 add_subdirectory(REVIDE-Helpers)
 
+# Install VS2019 runtime dependencies
+# https://braintrekking.wordpress.com/2013/04/27/dll-hell-how-to-include-microsoft-redistributable-runtime-libraries-in-your-cmakecpack-project/
+include(InstallRequiredSystemLibraries)
+install(FILES ${CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS}
+        DESTINATION bin
+        )
+
 set_property(DIRECTORY ${CMAKE_CURRENT_LIST_DIR} PROPERTY VS_STARTUP_PROJECT REVIDE)
 
 # TODO: https://github.com/LLVMParty/ExtensionRepository/edit/main/extensions.txt

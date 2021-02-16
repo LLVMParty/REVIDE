@@ -15,13 +15,20 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
 )
 
 if(TARGET Qt5::windeployqt)
+    # create a target that rebuilds when cmake is re-run
+    file(TOUCH "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-windeployqt.c")
+    add_library(${PROJECT_NAME}-windeployqt STATIC
+        "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-windeployqt.c"
+    )
+    set_target_properties(${PROJECT_NAME}-windeployqt PROPERTIES
+        FOLDER "Qt"
+    )
+
     # execute windeployqt in a tmp directory after build
-    add_custom_command(TARGET ${PROJECT_NAME}
+    add_custom_command(TARGET ${PROJECT_NAME}-windeployqt
         POST_BUILD
-        # TODO: don't remove and skip step when already exists?
         COMMAND ${CMAKE_COMMAND} -E remove_directory "${CMAKE_CURRENT_BINARY_DIR}/windeployqt"
-        #COMMAND set PATH=%PATH%$<SEMICOLON>${qt5_install_prefix}/bin
-        COMMAND Qt5::windeployqt --dir "${CMAKE_CURRENT_BINARY_DIR}/windeployqt" "$<TARGET_FILE:${PROJECT_NAME}>"
+        COMMAND Qt5::windeployqt --no-compiler-runtime --dir "${CMAKE_CURRENT_BINARY_DIR}/windeployqt" "$<TARGET_FILE:${PROJECT_NAME}>"
         COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_BINARY_DIR}/windeployqt" "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
     )
 
