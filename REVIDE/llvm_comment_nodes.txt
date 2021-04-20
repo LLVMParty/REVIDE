@@ -1,0 +1,16 @@
+    template<bool T = true>
+    void log(Module& program, IRBuilder<NoFolder>& builder, const std::string& instruction)
+    {
+        printf("%s\n", instruction);
+
+        if (!T)
+        {
+            builder.CreateAdd(builder.getInt32(1), builder.getInt32(1)); // NOP
+
+            auto main = program.getFunction("main");
+            auto curr = &main->back();
+            auto inst = &curr->back();
+            auto node = MDNode::get(builder.getContext(), MDString::get(builder.getContext(), instruction));
+            inst->setMetadata("UNKNOWN", node);
+        }
+    }

@@ -21,7 +21,7 @@ VTILDialog::VTILDialog(QWidget* parent)
     ui->setupUi(this);
 
     // TODO: use Qt stylesheets for this
-    QFont editorFont("Gintronic, Consolas", 8, QFont::Weight::Bold);
+    QFont editorFont("Gintronic, Consolas", 8);
     ui->editorBitcode->setFont(editorFont);
     ui->editorBitcode->setMarginsFont(editorFont);
     ui->editorBitcode->setMarginLineNumbers(0, true);

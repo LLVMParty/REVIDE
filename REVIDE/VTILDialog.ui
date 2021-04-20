@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>LLVM IR</string>
+   <string>VTIL</string>
   </property>
   <property name="windowIcon">
    <iconset resource="resources.qrc">
