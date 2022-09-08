@@ -7,21 +7,19 @@ add_executable(${PROJECT_NAME} ${SOURCES})
 #source_group(TREE ${PROJECT_SOURCE_DIR} FILES ${SOURCES})
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
-    Qt5::Widgets
-    Qt5::Svg
+    ${QT_LIBRARIES}
     QScintilla
-    LLVM
-    NativeLifters-Core
+    LLVM-Wrapper
 )
 
-if(TARGET Qt5::windeployqt)
+if(TARGET ${QT_PACKAGE}::windeployqt)
     # execute windeployqt in a tmp directory after build
     add_custom_command(TARGET ${PROJECT_NAME}
         POST_BUILD
         # TODO: don't remove and skip step when already exists?
         COMMAND ${CMAKE_COMMAND} -E remove_directory "${CMAKE_CURRENT_BINARY_DIR}/windeployqt"
         #COMMAND set PATH=%PATH%$<SEMICOLON>${qt5_install_prefix}/bin
-        COMMAND Qt5::windeployqt --dir "${CMAKE_CURRENT_BINARY_DIR}/windeployqt" "$<TARGET_FILE:${PROJECT_NAME}>"
+        COMMAND ${QT_PACKAGE}::windeployqt --dir "${CMAKE_CURRENT_BINARY_DIR}/windeployqt" "$<TARGET_FILE:${PROJECT_NAME}>"
         COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_BINARY_DIR}/windeployqt" "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
     )
 

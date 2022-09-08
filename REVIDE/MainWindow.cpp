@@ -1,7 +1,6 @@
 #include "MainWindow.h"
 #include "ui_MainWindow.h"
 #include "BitcodeDialog.h"
-#include "VTILDialog.h"
 #include "ui_MainWindow.h"
 
 #include <QFileDialog>
@@ -30,7 +29,7 @@ MainWindow::MainWindow(int port, QWidget* parent)
     connect(ui->action_Open, &QAction::triggered, [this]() {
         // TODO: save this directory in settings (project directory)
         static QString dir = "projects";
-        auto irFile = QFileDialog::getOpenFileName(this, "Caption", dir, "REVIDE (*.bc *.ll *.vtil);;All Files (*)");
+        auto irFile = QFileDialog::getOpenFileName(this, "Caption", dir, "REVIDE (*.bc *.ll);;All Files (*)");
         if (irFile.isEmpty())
             return;
         loadFile(QFileInfo(irFile));
@@ -65,10 +64,6 @@ void MainWindow::loadFile(const QFileInfo& file)
     if (extension == "bc" || extension == "ll")
     {
         llvmSlot("module", file.baseName(), contents);
-    }
-    else if (extension == "vtil")
-    {
-        vtilSlot(file.baseName(), contents);
     }
     else
     {
@@ -109,21 +104,6 @@ void MainWindow::llvmSlot(QString type, QString title, QByteArray data)
     bitcodeDialog->show();
     //bitcodeDialog->raise();
     //bitcodeDialog->activateWindow();
-}
-
-void MainWindow::vtilSlot(QString title, QByteArray data)
-{
-    ui->plainTextLog->appendPlainText(QString("vtil routine (%1), %2 bytes").arg(title).arg(data.length()));
-    auto dialog = new VTILDialog(nullptr);
-    if (!title.isEmpty())
-        dialog->setWindowTitle(QString("[%1] %2 (%3)").arg(mDialogs.size() + 1).arg(dialog->windowTitle()).arg(title));
-    QString errorMessage;
-    if (!dialog->load(data, errorMessage))
-    {
-        ui->plainTextLog->appendPlainText(QString("Failed to load VTIL routine: %1").arg(errorMessage));
-    }
-    mDialogs.append(dialog);
-    dialog->show();
 }
 
 void MainWindow::initializeThemes()

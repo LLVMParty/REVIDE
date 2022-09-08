@@ -282,7 +282,7 @@ static QString risonencode(const QString& s)
         }
         else
         {
-            r += QString().sprintf("%%%02X", (unsigned char)ch);
+            r += QString("%%%1").arg((unsigned char)ch, 10, QChar('0'));
         }
     }
     return r;

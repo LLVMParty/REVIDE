@@ -24,6 +24,7 @@
       <property name="font">
        <font>
         <family>Lucida Console</family>
+        <family>Courier New</family>
        </font>
       </property>
      </widget>
