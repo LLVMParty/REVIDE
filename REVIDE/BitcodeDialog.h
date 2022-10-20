@@ -5,6 +5,7 @@
 
 class BitcodeHighlighter;
 class FunctionDialog;
+class DocumentationDialog;
 
 namespace Ui
 {
@@ -81,5 +82,6 @@ private:
     QString mErrorMessage = "index out of bounds";
     int mErrorLine = -1, mErrorColumn = -1;
     FunctionDialog* mFunctionDialog;
+    DocumentationDialog* mDocumentationDialog;
 };
 

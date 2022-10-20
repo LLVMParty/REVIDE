@@ -5,5 +5,6 @@
         <file>themes/One Dark.css</file>
         <file>themes/Light.css</file>
         <file>themes/Sublime Text.css</file>
+        <file>documentation/LLVM.json</file>
     </qresource>
 </RCC>

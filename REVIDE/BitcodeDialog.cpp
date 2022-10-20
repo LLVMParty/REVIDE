@@ -2,6 +2,7 @@
 #include "ui_BitcodeDialog.h"
 #include "BitcodeHighlighter.h"
 #include "FunctionDialog.h"
+#include "DocumentationDialog.h"
 #include "AbstractFunctionList.h"
 
 #include <llvm/IR/Module.h>
@@ -14,10 +15,16 @@
 
 #include "lzstring.h"
 #include <sstream>
+#include <unordered_map>
 
+#include <QJsonObject>
+#include <QJsonDocument>
+#include <QJsonValue>
 #include <QDesktopServices>
 #include <QMessageBox>
 #include <QDebug>
+
+static std::unordered_map<std::string, QString> instructionDocumentation;
 
 struct LineAnnotationWriter : llvm::AssemblyAnnotationWriter
 {
@@ -116,7 +123,8 @@ struct LLVMGlobalContext
         QVector<AnnotatedLine> annotatedLines;
         QString line;
         Annotation annotation;
-        auto flushLine = [&]() {
+        auto flushLine = [&]()
+        {
             if (line.startsWith("; META:"))
             {
                 QStringList s = line.split(':');
@@ -181,19 +189,34 @@ BitcodeDialog::BitcodeDialog(QWidget* parent)
     setWindowFlag(Qt::WindowMinimizeButtonHint, true);
     ui->setupUi(this);
 
+    if (instructionDocumentation.empty())
+    {
+        QFile jsonFile(":/documentation/LLVM.json");
+        if (!jsonFile.open(QFile::ReadOnly))
+        {
+            QMessageBox::critical(parent, tr("Error"), tr("Failed to load LLVM documentation"));
+            return;
+        }
+        auto json = QJsonDocument::fromJson(jsonFile.readAll()).object();
+        for (const auto& key : json.keys())
+            instructionDocumentation[key.toStdString()] = json.value(key).toString();
+    }
+
     mHighlighter = new BitcodeHighlighter(this, ui->plainTextBitcode->document());
     mFunctionDialog = new FunctionDialog(this);
     mFunctionDialog->show();
-    connect(mFunctionDialog, &FunctionDialog::functionClicked, [this](int index) {
-        mContext->Module->getFunctionList();
-        QString name = mContext->Functions[index]->getName().str().c_str();
-        auto line = mFunctionLineMap[index];
-        auto block = ui->plainTextBitcode->document()->findBlockByNumber(line);
-        ui->plainTextBitcode->moveCursor(QTextCursor::End);
-        ui->plainTextBitcode->setTextCursor(QTextCursor(block.previous()));
-        ui->plainTextBitcode->setTextCursor(QTextCursor(block));
-        //QMessageBox::information(this, "clicked", QString("%1: %2").arg(line).arg(name));
-    });
+    connect(mFunctionDialog, &FunctionDialog::functionClicked, [this](int index)
+        {
+            mContext->Module->getFunctionList();
+            QString name = mContext->Functions[index]->getName().str().c_str();
+            auto line = mFunctionLineMap[index];
+            auto block = ui->plainTextBitcode->document()->findBlockByNumber(line);
+            ui->plainTextBitcode->moveCursor(QTextCursor::End);
+            ui->plainTextBitcode->setTextCursor(QTextCursor(block.previous()));
+            ui->plainTextBitcode->setTextCursor(QTextCursor(block));
+        });
+    mDocumentationDialog = new DocumentationDialog(this);
+    mDocumentationDialog->show();
 }
 
 BitcodeDialog::~BitcodeDialog()
@@ -234,13 +257,13 @@ bool BitcodeDialog::load(const QString& type, const QByteArray& data, QString& e
         }
         text.chop(1); // remove the last \n
         ui->plainTextBitcode->clear();
-        //auto cursor = ui->plainTextBitcode->textCursor();
-        //cursor.beginEditBlock();
-        //cursor.insertBlock();
-        //cursor.insertText(text);
-        //cursor.endEditBlock();
+        // auto cursor = ui->plainTextBitcode->textCursor();
+        // cursor.beginEditBlock();
+        // cursor.insertBlock();
+        // cursor.insertText(text);
+        // cursor.endEditBlock();
         ui->plainTextBitcode->setPlainText(text);
-        //ui->plainTextBitcode->appendPlainText(text);
+        // ui->plainTextBitcode->appendPlainText(text);
         QStringList functionList;
         functionList.reserve(mContext->Functions.size());
         for (const auto& function : mContext->Functions)
@@ -303,11 +326,13 @@ void BitcodeDialog::on_buttonGodbolt_clicked()
 void BitcodeDialog::on_buttonHelp_clicked()
 {
     QDesktopServices::openUrl(QUrl("https://llvm.org/docs/LangRef.html#abstract"));
+    mDocumentationDialog->show();
 }
 
 void BitcodeDialog::on_plainTextBitcode_cursorPositionChanged()
 {
     auto line = ui->plainTextBitcode->textCursor().block().firstLineNumber();
+    mDocumentationDialog->setHtml("");
     QString info;
     if (line >= mAnnotatedLines.length())
     {
@@ -344,8 +369,9 @@ void BitcodeDialog::on_plainTextBitcode_cursorPositionChanged()
         case AnnotationType::Instruction:
         {
             auto instruction = (llvm::Instruction*)annotation.ptr;
-            info2 = QString(", opcode: %1").arg(instruction->getOpcodeName());
-            //auto x = instruction->metadata
+            auto opcode = instruction->getOpcodeName();
+            info2 = QString(", opcode: %1").arg(opcode);
+            // auto x = instruction->metadata
             auto metadata = instruction->getMetadata("UNKNOWN");
             if (metadata)
             {
@@ -353,9 +379,12 @@ void BitcodeDialog::on_plainTextBitcode_cursorPositionChanged()
                 auto x = llvm::raw_string_ostream(ss);
                 metadata->print(x, instruction->getModule(), true);
                 qDebug() << ss.c_str();
-                //metadata->dump();
-                //instruction->getMetadata()
+                // metadata->dump();
+                // instruction->getMetadata()
             }
+            auto itr = instructionDocumentation.find(opcode);
+            if (itr != instructionDocumentation.end())
+                mDocumentationDialog->setHtml(itr->second);
         }
         break;
         }
@@ -383,5 +412,6 @@ void BitcodeDialog::changeEvent(QEvent* event)
 void BitcodeDialog::closeEvent(QCloseEvent* event)
 {
     mFunctionDialog->close();
+    mDocumentationDialog->close();
     return QDialog::closeEvent(event);
 }
