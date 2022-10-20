@@ -80,7 +80,7 @@ int main(int argc, char* argv[])
     // Load the files specified on the command line
     // TODO: use http requests when another instance is already open
     for (const auto& file : parser.positionalArguments())
-        w.loadFile(file);
+        w.loadFile(QFileInfo(file));
 
     // Handle the --noserver command line
     if (parser.isSet(paramNoServer))

@@ -15,8 +15,7 @@ BitcodeDialog {
 }
 
 CodeEditor {
-    font-family: "Courier New";
-    font-size: 15px;
+    font-family: "Courier New", "Courier", monospace;
     font-weight: bold;
     color: #F8F8F2;
     background-color: #282923;
