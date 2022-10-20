@@ -18,10 +18,12 @@ public:
     ~FunctionDialog();
     void setFunctionList(const QStringList& functionList);
 
+protected:
+    void closeEvent(QCloseEvent* event) override;
+
 signals:
     void functionClicked(int index);
 
 private:
     Ui::FunctionDialog* ui = nullptr;
 };
-

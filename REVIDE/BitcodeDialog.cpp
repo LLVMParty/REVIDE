@@ -4,6 +4,7 @@
 #include "FunctionDialog.h"
 #include "DocumentationDialog.h"
 #include "AbstractFunctionList.h"
+#include "QtHelpers.h"
 
 #include <llvm/IR/Module.h>
 #include <llvm/IR/AssemblyAnnotationWriter.h>
@@ -188,6 +189,7 @@ BitcodeDialog::BitcodeDialog(QWidget* parent)
     setWindowFlag(Qt::WindowMaximizeButtonHint, true);
     setWindowFlag(Qt::WindowMinimizeButtonHint, true);
     ui->setupUi(this);
+    qtRestoreGeometry(this);
 
     if (instructionDocumentation.empty())
     {
@@ -411,6 +413,7 @@ void BitcodeDialog::changeEvent(QEvent* event)
 
 void BitcodeDialog::closeEvent(QCloseEvent* event)
 {
+    qtSaveGeometry(this);
     mFunctionDialog->close();
     mDocumentationDialog->close();
     return QDialog::closeEvent(event);

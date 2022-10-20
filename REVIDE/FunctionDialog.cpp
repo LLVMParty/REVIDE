@@ -1,6 +1,7 @@
 #include "FunctionDialog.h"
 #include "ui_FunctionDialog.h"
 #include "FunctionListModel.h"
+#include "QtHelpers.h"
 
 #include <QMessageBox>
 
@@ -16,7 +17,7 @@ FunctionDialog::FunctionDialog(QWidget* parent)
         auto index = ui->functionList->currentIndex().row();
         emit functionClicked(index);
     });
-    // TODO: save position and state based on the parent object id (BitcodeDialog)
+    qtRestoreGeometry(this);
 }
 
 FunctionDialog::~FunctionDialog()
@@ -30,4 +31,10 @@ void FunctionDialog::setFunctionList(const QStringList& functionList)
 {
     ui->functionList->clear();
     ui->functionList->addItems(functionList);
+}
+
+void FunctionDialog::closeEvent(QCloseEvent* event)
+{
+    qtSaveGeometry(this);
+    QDialog::closeEvent(event);
 }

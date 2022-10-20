@@ -1,6 +1,7 @@
 #include "DocumentationDialog.h"
 #include "ui_DocumentationDialog.h"
 #include "FunctionListModel.h"
+#include "QtHelpers.h"
 
 #include <QStringListModel>
 
@@ -13,6 +14,7 @@ DocumentationDialog::DocumentationDialog(QWidget* parent)
     setWindowFlags(Qt::Tool);
     setWindowFlag(Qt::WindowContextHelpButtonHint, false);
     ui->setupUi(this);
+    qtRestoreGeometry(this);
 }
 
 DocumentationDialog::~DocumentationDialog()
@@ -23,4 +25,10 @@ DocumentationDialog::~DocumentationDialog()
 void DocumentationDialog::setHtml(const QString& html)
 {
     ui->textBrowser->setHtml(html);
+}
+
+void DocumentationDialog::closeEvent(QCloseEvent* event)
+{
+    qtSaveGeometry(this);
+    QDialog::closeEvent(event);
 }

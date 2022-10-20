@@ -18,7 +18,9 @@ public:
     ~DocumentationDialog();
     void setHtml(const QString& html);
 
+protected:
+    void closeEvent(QCloseEvent* event) override;
+
 private:
     Ui::DocumentationDialog* ui = nullptr;
 };
-

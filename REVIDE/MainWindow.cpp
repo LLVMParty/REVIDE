@@ -2,6 +2,7 @@
 #include "ui_MainWindow.h"
 #include "BitcodeDialog.h"
 #include "ui_MainWindow.h"
+#include "QtHelpers.h"
 
 #include <QFileDialog>
 #include <QCryptographicHash>
@@ -15,6 +16,9 @@ MainWindow::MainWindow(int port, QWidget* parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+
+    qtRestoreGeometry(this);
+    qtRestoreState(this);
 
     initializeThemes();
     initializeExamples(QDir(":/examples"), ui->menu_Examples);
@@ -79,6 +83,8 @@ void MainWindow::noServer()
 
 void MainWindow::closeEvent(QCloseEvent* event)
 {
+    qtSaveGeometry(this);
+    qtSaveState(this);
     for (QDialog* dialog : mDialogs)
         dialog->close();
     QMainWindow::closeEvent(event);
