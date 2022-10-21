@@ -24,6 +24,7 @@
 #include <QDesktopServices>
 #include <QMessageBox>
 #include <QDebug>
+#include <QFile>
 
 static std::unordered_map<std::string, QString> instructionDocumentation;
 
