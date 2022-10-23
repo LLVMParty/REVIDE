@@ -2,8 +2,6 @@
 
 #include <QDialog>
 
-#include "AbstractFunctionList.h"
-
 namespace Ui
 {
 class DocumentationDialog;

@@ -3,11 +3,12 @@
 #include "BitcodeHighlighter.h"
 #include "FunctionDialog.h"
 #include "DocumentationDialog.h"
-#include "AbstractFunctionList.h"
+#include "GraphDialog.h"
 #include "QtHelpers.h"
 
 #include <llvm/IR/Module.h>
 #include <llvm/IR/AssemblyAnnotationWriter.h>
+#include <llvm/IR/CFG.h>
 #include <llvm/IRReader/IRReader.h>
 #include <llvm/Bitcode/BitcodeReader.h>
 #include <llvm/Support/SourceMgr.h>
@@ -25,6 +26,7 @@
 #include <QMessageBox>
 #include <QDebug>
 #include <QFile>
+#include <QTextCursor>
 
 static std::unordered_map<std::string, QString> instructionDocumentation;
 
@@ -206,6 +208,7 @@ BitcodeDialog::BitcodeDialog(QWidget* parent)
     }
 
     mHighlighter = new BitcodeHighlighter(this, ui->plainTextBitcode->document());
+
     mFunctionDialog = new FunctionDialog(this);
     mFunctionDialog->show();
     connect(mFunctionDialog, &FunctionDialog::functionClicked, [this](int index)
@@ -218,8 +221,34 @@ BitcodeDialog::BitcodeDialog(QWidget* parent)
             ui->plainTextBitcode->setTextCursor(QTextCursor(block.previous()));
             ui->plainTextBitcode->setTextCursor(QTextCursor(block));
         });
+
     mDocumentationDialog = new DocumentationDialog(this);
     mDocumentationDialog->show();
+
+    mGraphDialog = new GraphDialog(this);
+    mGraphDialog->show();
+    connect(mGraphDialog->graphView(), &GenericGraphView::blockSelectionChanged, [this](ut64 blockId)
+        {
+            auto itr = mBlockIdToBlock.find(blockId);
+            if(itr != mBlockIdToBlock.end())
+            {
+                qDebug() << "blockSelectionChanged" << blockId;
+                auto line = mBlockLineMap.at(itr->second);
+                auto block = ui->plainTextBitcode->document()->findBlockByNumber(line);
+                // Attempt to center the start of the block in the view
+                ui->plainTextBitcode->moveCursor(QTextCursor::End);
+                ui->plainTextBitcode->setTextCursor(QTextCursor(block));
+                auto cursor = ui->plainTextBitcode->textCursor();
+                cursor.movePosition(QTextCursor::Up, QTextCursor::MoveAnchor, 10);
+                ui->plainTextBitcode->setTextCursor(cursor);
+                ui->plainTextBitcode->setTextCursor(QTextCursor(block));
+                // TODO: prevent the selection?
+            }
+            else
+            {
+                QMessageBox::information(this, tr("Error"), tr("Unknown block id %1").arg(blockId));
+            }
+        });
 }
 
 BitcodeDialog::~BitcodeDialog()
@@ -248,14 +277,28 @@ bool BitcodeDialog::load(const QString& type, const QByteArray& data, QString& e
         QString text;
         for (const auto& annotatedLine : mAnnotatedLines)
         {
+            auto line = annotatedLine.annotation.line;
             text += annotatedLine.line + "\n";
-            if (annotatedLine.annotation.type == AnnotationType::Function)
+            switch (annotatedLine.annotation.type)
             {
-                auto line = annotatedLine.annotation.line;
+            case AnnotationType::Function:
+            {
                 if (!mFunctionLineMap.isEmpty() && mFunctionLineMap.back() == line)
                     mFunctionLineMap.back() = line;
                 else
                     mFunctionLineMap.push_back(annotatedLine.annotation.line);
+            }
+            break;
+
+            case AnnotationType::BasicBlockStart:
+            {
+                auto basicBlock = (llvm::BasicBlock*)annotatedLine.annotation.ptr;
+                mBlockLineMap.emplace(basicBlock, line - 1);
+            }
+            break;
+
+            default:
+                break;
             }
         }
         text.chop(1); // remove the last \n
@@ -343,6 +386,9 @@ void BitcodeDialog::on_plainTextBitcode_cursorPositionChanged()
     }
     else
     {
+        const llvm::Function* selectedFn = nullptr;
+        const llvm::BasicBlock* selectedBB = nullptr;
+
         const Annotation& annotation = mAnnotatedLines[line].annotation;
         auto typeName = annotationTypeName[(int)annotation.type];
         QString info2;
@@ -350,6 +396,7 @@ void BitcodeDialog::on_plainTextBitcode_cursorPositionChanged()
         {
         case AnnotationType::Nothing:
         {
+            // TODO: get closest?
             info2 = "";
         }
         break;
@@ -358,6 +405,10 @@ void BitcodeDialog::on_plainTextBitcode_cursorPositionChanged()
         {
             auto function = (llvm::Function*)annotation.ptr;
             info2 = QString(", name: %1").arg(function->getName().str().c_str());
+
+            selectedFn = function;
+            if (!function->empty())
+                selectedBB = &function->getEntryBlock();
         }
         break;
 
@@ -366,6 +417,7 @@ void BitcodeDialog::on_plainTextBitcode_cursorPositionChanged()
         {
             auto basicBlock = (llvm::BasicBlock*)annotation.ptr;
             info2 = QString(", name: %1").arg(basicBlock->getName().str().c_str());
+            selectedBB = basicBlock;
         }
         break;
 
@@ -385,11 +437,56 @@ void BitcodeDialog::on_plainTextBitcode_cursorPositionChanged()
                 // metadata->dump();
                 // instruction->getMetadata()
             }
+
             auto itr = instructionDocumentation.find(opcode);
             if (itr != instructionDocumentation.end())
                 mDocumentationDialog->setHtml(itr->second);
+
+            selectedBB = instruction->getParent();
         }
         break;
+        }
+
+        if (selectedBB != nullptr && selectedFn == nullptr)
+            selectedFn = selectedBB->getParent();
+
+        // Update the graph if a valid function is selected
+        if (selectedFn != nullptr && !selectedFn->empty())
+        {
+            auto foundGraph = mFunctionGraphs.find(selectedFn);
+            if (foundGraph == mFunctionGraphs.end())
+            {
+                // Create the graph if it doesn't exist yet
+                // TODO: this isn't very performance friendly, needs to be moved to a thread pool
+                GenericGraph graph(mCurrentGraphId++);
+
+                for (const auto& BB : *selectedFn)
+                {
+                    auto name = QString::fromStdString(BB.getName().str());
+                    auto id = getBlockId(&BB);
+                    graph.addNode(id, name);
+                    // https://stackoverflow.com/a/59933151/1806760
+                    for (auto pred : llvm::predecessors(&BB))
+                    {
+                        graph.addEdge(getBlockId(pred), id);
+                    }
+                }
+
+                foundGraph = mFunctionGraphs.emplace(selectedFn, std::move(graph)).first;
+            }
+
+            mGraphDialog->graphView()->setGraph(foundGraph->second);
+
+            if (selectedBB != nullptr)
+            {
+                mGraphDialog->graphView()->selectBlockWithId(getBlockId(selectedBB));
+            }
+
+            mGraphDialog->show();
+        }
+        else
+        {
+            mGraphDialog->hide();
         }
 
         info = QString("line %1, type: %2%3").arg(line).arg(typeName).arg(info2);
@@ -417,5 +514,21 @@ void BitcodeDialog::closeEvent(QCloseEvent* event)
     qtSaveGeometry(this);
     mFunctionDialog->close();
     mDocumentationDialog->close();
+    mGraphDialog->close();
     return QDialog::closeEvent(event);
+}
+
+ut64 BitcodeDialog::getBlockId(const llvm::BasicBlock* block)
+{
+    if (block == nullptr)
+        throw std::logic_error("No ID for null block allowed!");
+
+    auto itr = mBlockToBlockId.find(block);
+    if (itr == mBlockToBlockId.end())
+    {
+        auto id = mCurrentBlockId++;
+        itr = mBlockToBlockId.emplace(block, id).first;
+        mBlockIdToBlock[id] = block;
+    }
+    return itr->second;
 }
