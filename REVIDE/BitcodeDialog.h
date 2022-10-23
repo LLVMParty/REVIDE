@@ -6,6 +6,7 @@
 class BitcodeHighlighter;
 class FunctionDialog;
 class DocumentationDialog;
+class GraphDialog;
 
 namespace Ui
 {
@@ -83,5 +84,6 @@ private:
     int mErrorLine = -1, mErrorColumn = -1;
     FunctionDialog* mFunctionDialog;
     DocumentationDialog* mDocumentationDialog;
+    GraphDialog* mGraphDialog;
 };
 

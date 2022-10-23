@@ -3,7 +3,7 @@
 #include "BitcodeHighlighter.h"
 #include "FunctionDialog.h"
 #include "DocumentationDialog.h"
-#include "AbstractFunctionList.h"
+#include "GraphDialog.h"
 #include "QtHelpers.h"
 
 #include <llvm/IR/Module.h>
@@ -206,6 +206,7 @@ BitcodeDialog::BitcodeDialog(QWidget* parent)
     }
 
     mHighlighter = new BitcodeHighlighter(this, ui->plainTextBitcode->document());
+
     mFunctionDialog = new FunctionDialog(this);
     mFunctionDialog->show();
     connect(mFunctionDialog, &FunctionDialog::functionClicked, [this](int index)
@@ -218,8 +219,12 @@ BitcodeDialog::BitcodeDialog(QWidget* parent)
             ui->plainTextBitcode->setTextCursor(QTextCursor(block.previous()));
             ui->plainTextBitcode->setTextCursor(QTextCursor(block));
         });
+
     mDocumentationDialog = new DocumentationDialog(this);
     mDocumentationDialog->show();
+
+    mGraphDialog = new GraphDialog(this);
+    mGraphDialog->show();
 }
 
 BitcodeDialog::~BitcodeDialog()
@@ -417,5 +422,6 @@ void BitcodeDialog::closeEvent(QCloseEvent* event)
     qtSaveGeometry(this);
     mFunctionDialog->close();
     mDocumentationDialog->close();
+    mGraphDialog->close();
     return QDialog::closeEvent(event);
 }

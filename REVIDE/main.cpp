@@ -5,6 +5,8 @@
 #include <QSettings>
 #include <QCommandLineParser>
 
+#include "core/Cutter.h"
+#include "common/Configuration.h"
 #include <llvm/IR/Module.h>
 
 int main(int argc, char* argv[])
@@ -67,6 +69,10 @@ int main(int argc, char* argv[])
         app.setStyleSheet(f.readAll());
         // TODO: if stylesheet parsing fails Qt continues with a warning
     }
+
+    // Create Cutter instance
+    CutterCore core(nullptr);
+    Config()->loadInitial();
 
     // Handle a custom port
     if (parser.isSet(paramPort))

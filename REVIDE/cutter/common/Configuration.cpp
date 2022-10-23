@@ -281,6 +281,9 @@ bool Configuration::nativeWindowIsDark()
 
 void Configuration::loadNativeStylesheet()
 {
+    // TODO: support this properly
+    return;
+
     /* Load Qt Theme */
     QFile f(":native/native.qss");
     if (!f.exists()) {
@@ -519,6 +522,7 @@ void Configuration::setLastThemeOf(const CutterInterfaceTheme &currInterfaceThem
 
 const QColor Configuration::getColor(const QString &name) const
 {
+    qDebug() << QString("getColor(%1)").arg(name);
     if (s.contains("colors." + name)) {
         return s.value("colors." + name).value<QColor>();
     } else {
