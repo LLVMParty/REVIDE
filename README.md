@@ -1,6 +1,12 @@
 # REVIDE
 
-## Qt
+![screenshot of the UI](https://i.imgur.com/QpxNqrM.png)
+
+## Dependencies
+
+You can get precompiled dependencies for MSVC here: https://github.com/LLVMParty/REVIDE/releases/tag/libraries
+
+### Qt
 
 From Git Bash:
 
@@ -11,11 +17,9 @@ sh install-qt.sh --directory /d/Qt --host windows_x86 --target desktop --toolcha
 
 Alternatively you can download and install Qt from [here](https://www.qt.io/offline-installers).
 
-## LLVM
+### LLVM
 
 TODO: Add instructions on how to produce this package.
-
-You can download a prebuilt package for Visual Studio 2019 at https://github.com/LLVMParty/REVIDE/releases/tag/libraries.
 
 ## Building
 
