@@ -3,57 +3,69 @@
 #include "FunctionListModel.h"
 #include "QtHelpers.h"
 
-#include <QStringListModel>
-
+#include <QTimer>
 #include <QMessageBox>
 
 #include "widgets/SimpleTextGraphView.h"
 
-TestGraphView::TestGraphView(QWidget* parent)
+GenericGraphView::GenericGraphView(QWidget* parent)
     : SimpleTextGraphView(parent, nullptr /* fake MainWindow */)
 {
 }
 
-void TestGraphView::loadCurrentGraph()
+void GenericGraphView::loadCurrentGraph()
 {
-    qDebug() << "loadCurrentGraph()";
+    static int counter = 0;
+    qDebug() << "loadCurrentGraph()" << counter++;
 
     blockContent.clear();
     blocks.clear();
 
     std::unordered_set<ut64> edges;
-    auto addBasicBlock = [&](RVA address, const QString& name, const std::unordered_set<ut64>& destinations) {
+    for(const auto& node : mGraph.mNodes)
+    {
         GraphLayout::GraphBlock block;
-        block.entry = address;
+        block.entry = node.first;
 
-        for(const auto& x : destinations) {
-            block.edges.emplace_back(x);
-            edges.insert(x);
+        auto edgesItr = mGraph.mEdges.find(block.entry);
+        if(edgesItr != mGraph.mEdges.end())
+        {
+            for(const auto& to : edgesItr->second)
+            {
+                block.edges.emplace_back(to);
+                edges.insert(to);
+            }
         }
 
-        addBlock(std::move(block), name, address);
-    };
+        addBlock(std::move(block), node.second, node.first);
+    }
 
-    addBasicBlock(0x1000, "BB0", { 0x1001 });
-    addBasicBlock(0x1001, "BB1", {0x1002, 0x1003 });
-    addBasicBlock(0x1002, "BB2", {0x1004});
-    addBasicBlock(0x1003, "BB3", {0x1004});
-    addBasicBlock(0x1004, "BB4", {});
-
-    // Only for unknown destinations
     for(const auto& x : edges) {
         if(blockContent.find(x) != blockContent.end()) {
             // Already visited
             continue;
         }
 
+        // Create fake node for an unknown destination
         GraphLayout::GraphBlock block;
         block.entry = x;
-        auto name = QString("BB_UNK_%1").arg(RzAddressString(x));
-        this->addBlock(block, name, x);
+        addBlock(block, QString("unknown_%1").arg(RzHexString(x)), x);
     }
 
     computeGraphPlacement();
+
+    // TODO: this doesn't seem to always work right away
+    QTimer::singleShot(0, [this]
+        {
+            center();
+        });
+}
+void GenericGraphView::blockClicked(GraphView::GraphBlock& block, QMouseEvent* event, QPoint pos)
+{
+    auto oldSelection = selectedBlock;
+    SimpleTextGraphView::blockClicked(block, event, pos);
+    if(selectedBlock != oldSelection)
+        emit blockSelectionChanged(selectedBlock);
 }
 
 GraphDialog::GraphDialog(QWidget* parent)
@@ -65,10 +77,8 @@ GraphDialog::GraphDialog(QWidget* parent)
     ui->setupUi(this);
     qtRestoreGeometry(this);
 
-    mGraphView = new TestGraphView(this);
+    mGraphView = new GenericGraphView(this);
     ui->verticalLayout->addWidget(mGraphView);
-    // TODO: pass some kind of graph
-    mGraphView->refreshView();
 }
 
 GraphDialog::~GraphDialog()
@@ -76,13 +86,8 @@ GraphDialog::~GraphDialog()
     delete ui;
 }
 
-void GraphDialog::setHtml(const QString& html)
-{
-}
-
 void GraphDialog::closeEvent(QCloseEvent* event)
 {
     qtSaveGeometry(this);
     QDialog::closeEvent(event);
 }
-
