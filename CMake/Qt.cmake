@@ -13,8 +13,8 @@ set(QT_LIBRARIES
 )
 
 if("${QT_PACKAGE}" STREQUAL "Qt6")
-    set(ADDITIONAL_COMPONENTS Core5Compat)
-    list(APPEND QT_LIBRARIES Qt6::Core5Compat)
+    set(ADDITIONAL_COMPONENTS Core5Compat OpenGLWidgets)
+    list(APPEND QT_LIBRARIES Qt6::Core5Compat Qt6::OpenGLWidgets)
 else()
     set(ADDITIONAL_COMPONENTS "")
 endif()
