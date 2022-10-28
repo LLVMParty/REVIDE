@@ -17,23 +17,33 @@ sh install-qt.sh --directory /d/Qt --host windows_x86 --target desktop --toolcha
 
 Alternatively you can download and install Qt from [here](https://www.qt.io/offline-installers).
 
+On macos (M1) you can install it with `brew install qt@6`. You can find the prefix with `brew --prefix qt@6`.
+
 ### LLVM
 
 TODO: Add instructions on how to produce this package.
 
-## Building
+On macos you can install LLVM with `brew install llvm@15`. You can find the prefix with `brew --prefix llvm@15`.
 
-You can set the global `CMAKE_PREFIX_PATH` environment variable to contain both Qt and LLVM:
+For Windows you can download precompiled dependencies (LLVM 15 and Qt 5.12.12) [here](https://github.com/LLVMParty/REVIDE/releases/tag/libraries).
 
-```bash
-setx CMAKE_PREFIX_PATH "d:\Qt\5.12.9\msvc2017_64;d:\CodeBlocks\llvm10-install-full-v2"
-```
+## Building (generic)
 
-Then run CMake:
+You have to set the [CMAKE_PREFIX_PATH](https://cmake.org/cmake/help/latest/variable/CMAKE_PREFIX_PATH.html) CMake variable on the CMake command line to a `;`-separated list of prefixes for the dependencies:
 
 ```bash
-mkdir build && cd build
-cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo ..
+cmake -B build "-DCMAKE_PREFIX_PATH=/path/to/llvm;/path/to/qt" -DQT_PACKAGE=Qt5
+cmake --build build --parallel
 ```
 
-You should also be able to use CLion or Visual Studio to open the repository so you don't have to manually run CMake.
+It is important to surround the argument with quotes on Unix platforms, because the `;` appears to have a special meaning.
+
+You can set `-DQT_PACKAGE=Qt6` to build with Qt6.
+
+## Building (macos)
+
+```sh
+brew install llvm@15 qt@6
+cmake -B build "-DCMAKE_PREFIX_PATH=$(brew --prefix llvm@15);$(brew --prefix qt@6)" -DQT_PACKAGE=Qt6
+cmake --build build --parallel
+```
