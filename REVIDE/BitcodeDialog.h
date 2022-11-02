@@ -100,5 +100,6 @@ private:
     std::unordered_map<const llvm::BasicBlock*, ut64> mBlockToBlockId;
     ut64 mCurrentBlockId = 0;
     ut64 mCurrentGraphId = 0;
+    bool mIgnoreCursorMove = false;
 };
 

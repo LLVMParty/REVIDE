@@ -91,3 +91,15 @@ void GraphDialog::closeEvent(QCloseEvent* event)
     qtSaveGeometry(this);
     QDialog::closeEvent(event);
 }
+
+void GraphDialog::showEvent(QShowEvent* event)
+{
+    qDebug() << "showEvent()";
+    QDialog::showEvent(event);
+}
+
+void GraphDialog::hideEvent(QHideEvent* event)
+{
+    qDebug() << "hideEvent()";
+    QDialog::hideEvent(event);
+}

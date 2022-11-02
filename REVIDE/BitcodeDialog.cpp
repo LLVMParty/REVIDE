@@ -235,12 +235,14 @@ BitcodeDialog::BitcodeDialog(QWidget* parent)
                 qDebug() << "blockSelectionChanged" << blockId;
                 auto line = mBlockLineMap.at(itr->second);
                 auto block = ui->plainTextBitcode->document()->findBlockByNumber(line);
+                mIgnoreCursorMove = true;
                 // Attempt to center the start of the block in the view
                 ui->plainTextBitcode->moveCursor(QTextCursor::End);
                 ui->plainTextBitcode->setTextCursor(QTextCursor(block));
                 auto cursor = ui->plainTextBitcode->textCursor();
                 cursor.movePosition(QTextCursor::Up, QTextCursor::MoveAnchor, 10);
                 ui->plainTextBitcode->setTextCursor(cursor);
+                mIgnoreCursorMove = false;
                 ui->plainTextBitcode->setTextCursor(QTextCursor(block));
                 // TODO: prevent the selection?
             }
@@ -377,6 +379,9 @@ void BitcodeDialog::on_buttonHelp_clicked()
 
 void BitcodeDialog::on_plainTextBitcode_cursorPositionChanged()
 {
+    if (mIgnoreCursorMove)
+        return;
+
     auto line = ui->plainTextBitcode->textCursor().block().firstLineNumber();
     mDocumentationDialog->setHtml("");
     QString info;
@@ -486,6 +491,7 @@ void BitcodeDialog::on_plainTextBitcode_cursorPositionChanged()
         }
         else
         {
+            qDebug() << "cursor changed" << line;
             mGraphDialog->hide();
         }
 
