@@ -57,6 +57,7 @@
 CodeEditor::CodeEditor(QWidget* parent)
     : QPlainTextEdit(parent)
 {
+    setWordWrapMode(QTextOption::NoWrap);
     lineNumberArea = new LineNumberArea(this);
 
     connect(this, &CodeEditor::blockCountChanged, this, &CodeEditor::updateLineNumberAreaWidth);

@@ -1,17 +1,16 @@
 #pragma once
 
-#include <QDialog>
+#include <QLineEdit>
+#include <QPushButton>
+
+#include "CodeEditor.h"
 #include "Styled.h"
 #include "GraphDialog.h"
+#include "DockManager.h"
 
 class BitcodeHighlighter;
 class FunctionDialog;
 class DocumentationDialog;
-
-namespace Ui
-{
-class BitcodeDialog;
-}
 
 struct LLVMGlobalContext;
 
@@ -19,7 +18,7 @@ namespace llvm
 {
 class Function;
 class BasicBlock;
-}
+} // namespace llvm
 
 enum class AnnotationType
 {
@@ -51,7 +50,7 @@ struct AnnotatedLine
     Annotation annotation;
 };
 
-class BitcodeDialog : public QDialog, Styled<BitcodeDialog>
+class BitcodeDialog : public ads::CDockManager, Styled<BitcodeDialog>
 {
     Q_OBJECT
 
@@ -76,20 +75,25 @@ protected:
     void closeEvent(QCloseEvent* event) override;
 
 private slots:
-    void on_buttonGodbolt_clicked();
-    void on_buttonHelp_clicked();
-    void on_plainTextBitcode_cursorPositionChanged();
+    void godboltClickedSlot();
+    void helpClickedSlot();
+    void bitcodeCursorPositionChangedSlot();
 
 private:
     ut64 getBlockId(const llvm::BasicBlock* block);
 
 private:
-    Ui::BitcodeDialog* ui = nullptr;
+    CodeEditor* mPlainTextBitcode = nullptr;
+    QLineEdit* mLineEditStatus = nullptr;
+    QPushButton* mButtonGodbolt = nullptr;
+    QPushButton* mButtonHelp = nullptr;
+
     LLVMGlobalContext* mContext = nullptr;
     BitcodeHighlighter* mHighlighter = nullptr;
     QVector<AnnotatedLine> mAnnotatedLines;
     QVector<int> mFunctionLineMap;
     std::unordered_map<const llvm::BasicBlock*, int> mBlockLineMap;
+    std::unordered_map<const llvm::BasicBlock*, QString> mBlockLabelMap;
     QString mErrorMessage = "index out of bounds";
     int mErrorLine = -1, mErrorColumn = -1;
     FunctionDialog* mFunctionDialog;
@@ -101,5 +105,5 @@ private:
     ut64 mCurrentBlockId = 0;
     ut64 mCurrentGraphId = 0;
     bool mIgnoreCursorMove = false;
+    ads::CDockManager* mDockManager = nullptr;
 };
-

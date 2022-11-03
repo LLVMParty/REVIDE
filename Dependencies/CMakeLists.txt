@@ -10,7 +10,7 @@ CPMAddPackage(
 )
 if(QScintilla_ADDED)
 	# TODO: Qt translations?
-	file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
+	file(GLOB_RECURSE SOURCES
 		${QScintilla_SOURCE_DIR}/scintilla/*.cpp
 		${QScintilla_SOURCE_DIR}/scintilla/*.h
 		${QScintilla_SOURCE_DIR}/src/*.cpp
@@ -32,8 +32,45 @@ if(QScintilla_ADDED)
 		QSCINTILLA_MAKE_DLL
 	)
 	target_link_libraries(QScintilla PUBLIC
-		$CACHE{QT_PACKAGE}::Widgets
-		$CACHE{QT_PACKAGE}::PrintSupport
+		${QT_PACKAGE}::Widgets
+		${QT_PACKAGE}::PrintSupport
 	)
 	source_group(TREE ${QScintilla_SOURCE_DIR} FILES ${SOURCES})
+endif()
+
+CPMAddPackage(
+	NAME QtADS
+	VERSION 3.8.3
+	GIT_REPOSITORY https://github.com/githubuser0xFFFF/Qt-Advanced-Docking-System
+	GIT_TAG 22f609c
+	DOWNLOAD_ONLY ON
+	#BUILD_STATIC=OFF
+	#BUILD_EXAMPLES=OFF
+)
+if(QtADS_ADDED)
+	file(GLOB SOURCES
+		${QtADS_SOURCE_DIR}/src/*.cpp
+		${QtADS_SOURCE_DIR}/src/*.h
+		${QtADS_SOURCE_DIR}/src/*.qrc
+	)
+	if(UNIX AND NOT APPLE)
+		list(APPEND SOURCES
+			${QtADS_SOURCE_DIR}/src/linux/FloatingWidgetTitleBar.cpp
+			${QtADS_SOURCE_DIR}/src/linux/FloatingWidgetTitleBar.h
+		)
+	endif()
+	add_library(qtadvanceddocking STATIC ${SOURCES})
+	target_compile_options(qtadvanceddocking PUBLIC "$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
+	if(UNIX AND NOT APPLE)
+		target_link_libraries(qtadvanceddocking PUBLIC xcb)
+	endif()
+	target_compile_features(qtadvanceddocking PUBLIC cxx_std_17)
+	target_include_directories(qtadvanceddocking PUBLIC "${QtADS_SOURCE_DIR}/src")
+	target_link_libraries(qtadvanceddocking PUBLIC
+		${QT_PACKAGE}::Core
+		${QT_PACKAGE}::Gui
+		${QT_PACKAGE}::Widgets
+	)
+	target_compile_definitions(qtadvanceddocking PUBLIC ADS_STATIC)
+	add_library(ads::qtadvanceddocking ALIAS qtadvanceddocking)
 endif()

@@ -5,6 +5,7 @@
 #include <QDialog>
 #include <QDir>
 #include "Webserver.h"
+#include "DockManager.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui
@@ -39,5 +40,6 @@ private:
 private:
     Ui::MainWindow* ui = nullptr;
     Webserver* mWebserver = nullptr;
-    QList<QDialog*> mDialogs;
+    QList<QWidget*> mDialogs;
+    ads::CDockManager* mDockManager = nullptr;
 };

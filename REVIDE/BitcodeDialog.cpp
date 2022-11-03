@@ -1,5 +1,4 @@
 #include "BitcodeDialog.h"
-#include "ui_BitcodeDialog.h"
 #include "BitcodeHighlighter.h"
 #include "FunctionDialog.h"
 #include "DocumentationDialog.h"
@@ -18,7 +17,9 @@
 #include "lzstring.h"
 #include <sstream>
 #include <unordered_map>
+#include "DockAreaWidget.h"
 
+#include <QLayout>
 #include <QJsonObject>
 #include <QJsonDocument>
 #include <QJsonValue>
@@ -184,15 +185,32 @@ struct LLVMGlobalContext
 };
 
 BitcodeDialog::BitcodeDialog(QWidget* parent)
-    : QDialog(parent)
-    , ui(new Ui::BitcodeDialog)
+    : ads::CDockManager(parent)
     , mContext(new LLVMGlobalContext())
 {
-    setWindowFlag(Qt::WindowContextHelpButtonHint, false);
-    setWindowFlag(Qt::WindowMaximizeButtonHint, true);
-    setWindowFlag(Qt::WindowMinimizeButtonHint, true);
-    ui->setupUi(this);
-    qtRestoreGeometry(this);
+    auto codeWidget = new QWidget();
+    codeWidget->setWindowTitle(tr("Code"));
+    mPlainTextBitcode = new CodeEditor(codeWidget);
+    connect(mPlainTextBitcode, &CodeEditor::cursorPositionChanged, this, &BitcodeDialog::bitcodeCursorPositionChangedSlot);
+
+    mLineEditStatus = new QLineEdit(codeWidget);
+    mLineEditStatus->setReadOnly(true);
+
+    mButtonGodbolt = new QPushButton(tr("Godbolt"), codeWidget);
+    connect(mButtonGodbolt, &QPushButton::clicked, this, &BitcodeDialog::godboltClickedSlot);
+
+    mButtonHelp = new QPushButton(tr("Help"), codeWidget);
+    connect(mButtonHelp, &QPushButton::clicked, this, &BitcodeDialog::helpClickedSlot);
+
+    auto horizontalLayout = new QHBoxLayout();
+    horizontalLayout->addWidget(mLineEditStatus);
+    horizontalLayout->addWidget(mButtonGodbolt);
+    horizontalLayout->addWidget(mButtonHelp);
+
+    auto verticalLayout = new QVBoxLayout();
+    verticalLayout->addWidget(mPlainTextBitcode);
+    verticalLayout->addLayout(horizontalLayout);
+    codeWidget->setLayout(verticalLayout);
 
     if (instructionDocumentation.empty())
     {
@@ -207,43 +225,43 @@ BitcodeDialog::BitcodeDialog(QWidget* parent)
             instructionDocumentation[key.toStdString()] = json.value(key).toString();
     }
 
-    mHighlighter = new BitcodeHighlighter(this, ui->plainTextBitcode->document());
+    mHighlighter = new BitcodeHighlighter(this, mPlainTextBitcode->document());
 
     mFunctionDialog = new FunctionDialog(this);
-    mFunctionDialog->show();
+    //mFunctionDialog->show();
     connect(mFunctionDialog, &FunctionDialog::functionClicked, [this](int index)
         {
             mContext->Module->getFunctionList();
             QString name = mContext->Functions[index]->getName().str().c_str();
             auto line = mFunctionLineMap[index];
-            auto block = ui->plainTextBitcode->document()->findBlockByNumber(line);
-            ui->plainTextBitcode->moveCursor(QTextCursor::End);
-            ui->plainTextBitcode->setTextCursor(QTextCursor(block.previous()));
-            ui->plainTextBitcode->setTextCursor(QTextCursor(block));
+            auto block = mPlainTextBitcode->document()->findBlockByNumber(line);
+            mPlainTextBitcode->moveCursor(QTextCursor::End);
+            mPlainTextBitcode->setTextCursor(QTextCursor(block.previous()));
+            mPlainTextBitcode->setTextCursor(QTextCursor(block));
         });
 
     mDocumentationDialog = new DocumentationDialog(this);
-    mDocumentationDialog->show();
+    //mDocumentationDialog->show();
 
     mGraphDialog = new GraphDialog(this);
-    mGraphDialog->show();
+    //mGraphDialog->show();
     connect(mGraphDialog->graphView(), &GenericGraphView::blockSelectionChanged, [this](ut64 blockId)
         {
             auto itr = mBlockIdToBlock.find(blockId);
-            if(itr != mBlockIdToBlock.end())
+            if (itr != mBlockIdToBlock.end())
             {
                 qDebug() << "blockSelectionChanged" << blockId;
                 auto line = mBlockLineMap.at(itr->second);
-                auto block = ui->plainTextBitcode->document()->findBlockByNumber(line);
+                auto block = mPlainTextBitcode->document()->findBlockByNumber(line);
                 mIgnoreCursorMove = true;
                 // Attempt to center the start of the block in the view
-                ui->plainTextBitcode->moveCursor(QTextCursor::End);
-                ui->plainTextBitcode->setTextCursor(QTextCursor(block));
-                auto cursor = ui->plainTextBitcode->textCursor();
+                mPlainTextBitcode->moveCursor(QTextCursor::End);
+                mPlainTextBitcode->setTextCursor(QTextCursor(block));
+                auto cursor = mPlainTextBitcode->textCursor();
                 cursor.movePosition(QTextCursor::Up, QTextCursor::MoveAnchor, 10);
-                ui->plainTextBitcode->setTextCursor(cursor);
+                mPlainTextBitcode->setTextCursor(cursor);
                 mIgnoreCursorMove = false;
-                ui->plainTextBitcode->setTextCursor(QTextCursor(block));
+                mPlainTextBitcode->setTextCursor(QTextCursor(block));
                 // TODO: prevent the selection?
             }
             else
@@ -251,11 +269,29 @@ BitcodeDialog::BitcodeDialog(QWidget* parent)
                 QMessageBox::information(this, tr("Error"), tr("Unknown block id %1").arg(blockId));
             }
         });
+
+    setConfigFlag(ads::CDockManager::DockAreaHasCloseButton, false);
+    setConfigFlag(ads::CDockManager::DockAreaHasTabsMenuButton, false);
+
+    auto dockHelper = [this](ads::DockWidgetArea area, QWidget* widget, ads::CDockWidget* inside = nullptr)
+    {
+        auto dockWidget = new ads::CDockWidget(widget->windowTitle(), this);
+        dockWidget->setFeature(ads::CDockWidget::DockWidgetClosable, false);
+        dockWidget->setWidget(widget);
+        addDockWidget(area, dockWidget, inside ? inside->dockAreaWidget() : nullptr);
+        return dockWidget;
+    };
+
+    dockHelper(ads::CenterDockWidgetArea, codeWidget);
+    dockHelper(ads::RightDockWidgetArea, mDocumentationDialog);
+    auto functionDockWidget = dockHelper(ads::LeftDockWidgetArea, mFunctionDialog);
+    dockHelper(ads::BottomDockWidgetArea, mGraphDialog, functionDockWidget);
+
+    qtRestoreState(this);
 }
 
 BitcodeDialog::~BitcodeDialog()
 {
-    delete ui;
     delete mContext;
     delete mHighlighter;
 }
@@ -267,12 +303,12 @@ bool BitcodeDialog::load(const QString& type, const QByteArray& data, QString& e
         if (!mContext->Parse(data, errorMessage, mErrorLine, mErrorColumn))
         {
             mErrorMessage = errorMessage;
-            ui->plainTextBitcode->setErrorLine(mErrorLine);
-            ui->plainTextBitcode->setPlainText(data);
-            auto cursor = ui->plainTextBitcode->textCursor();
+            mPlainTextBitcode->setErrorLine(mErrorLine);
+            mPlainTextBitcode->setPlainText(data);
+            auto cursor = mPlainTextBitcode->textCursor();
             cursor.clearSelection();
-            cursor.setPosition(ui->plainTextBitcode->document()->findBlockByLineNumber(mErrorLine - 1).position() + mErrorColumn);
-            ui->plainTextBitcode->setTextCursor(cursor);
+            cursor.setPosition(mPlainTextBitcode->document()->findBlockByLineNumber(mErrorLine - 1).position() + mErrorColumn);
+            mPlainTextBitcode->setTextCursor(cursor);
             return false;
         }
         mAnnotatedLines = mContext->Dump();
@@ -295,7 +331,13 @@ bool BitcodeDialog::load(const QString& type, const QByteArray& data, QString& e
             case AnnotationType::BasicBlockStart:
             {
                 auto basicBlock = (llvm::BasicBlock*)annotatedLine.annotation.ptr;
-                mBlockLineMap.emplace(basicBlock, line - 1);
+                if(mBlockLineMap.emplace(basicBlock, line - 1).second)
+                {
+                    auto label = annotatedLine.line.split(':')[0];
+                    if (basicBlock == &basicBlock->getParent()->getEntryBlock())
+                        label = "entry";
+                    mBlockLabelMap.emplace(basicBlock, label);
+                }
             }
             break;
 
@@ -304,20 +346,20 @@ bool BitcodeDialog::load(const QString& type, const QByteArray& data, QString& e
             }
         }
         text.chop(1); // remove the last \n
-        ui->plainTextBitcode->clear();
-        // auto cursor = ui->plainTextBitcode->textCursor();
+        mPlainTextBitcode->clear();
+        // auto cursor = mPlainTextBitcode->textCursor();
         // cursor.beginEditBlock();
         // cursor.insertBlock();
         // cursor.insertText(text);
         // cursor.endEditBlock();
-        ui->plainTextBitcode->setPlainText(text);
-        // ui->plainTextBitcode->appendPlainText(text);
+        mPlainTextBitcode->setPlainText(text);
+        // mPlainTextBitcode->appendPlainText(text);
         QStringList functionList;
         functionList.reserve(mContext->Functions.size());
         for (const auto& function : mContext->Functions)
             functionList << function->getName().str().c_str();
         mFunctionDialog->setFunctionList(functionList);
-        qDebug() << "blockCount" << ui->plainTextBitcode->blockCount();
+        qDebug() << "blockCount" << mPlainTextBitcode->blockCount();
         return true;
     }
     else
@@ -359,10 +401,10 @@ static QString risonencode(const QString& s)
     return r;
 }
 
-void BitcodeDialog::on_buttonGodbolt_clicked()
+void BitcodeDialog::godboltClickedSlot()
 {
     QString pattern = "g:!((g:!((g:!((h:codeEditor,i:(fontScale:14,j:2,lang:llvm,selection:(endColumn:1,endLineNumber:1,positionColumn:1,positionLineNumber:1,selectionStartColumn:1,selectionStartLineNumber:1,startColumn:1,startLineNumber:1),source:'{}'),l:'5',n:'0',o:'LLVM+IR+source+%232',t:'0')),k:50,l:'4',n:'0',o:'',s:0,t:'0'),(g:!((h:compiler,i:(compiler:llctrunk,filters:(b:'0',binary:'1',commentOnly:'0',demangle:'0',directives:'0',execute:'1',intel:'0',libraryCode:'1',trim:'1'),fontScale:14,j:1,lang:llvm,libs:!(),options:'-O3',selection:(endColumn:1,endLineNumber:1,positionColumn:1,positionLineNumber:1,selectionStartColumn:1,selectionStartLineNumber:1,startColumn:1,startLineNumber:1),source:2),l:'5',n:'0',o:'llc+(trunk)+(Editor+%232,+Compiler+%231)+LLVM+IR',t:'0')),header:(),k:50,l:'4',n:'0',o:'',s:0,t:'0')),l:'2',n:'0',o:'',t:'0')),version:4";
-    auto text = ui->plainTextBitcode->toPlainText();
+    auto text = mPlainTextBitcode->toPlainText();
     text = risonencode(text);
     pattern = pattern.replace("{}", text);
     auto compressed = LZString::compressToBase64(pattern);
@@ -371,18 +413,18 @@ void BitcodeDialog::on_buttonGodbolt_clicked()
     QDesktopServices::openUrl(url);
 }
 
-void BitcodeDialog::on_buttonHelp_clicked()
+void BitcodeDialog::helpClickedSlot()
 {
     QDesktopServices::openUrl(QUrl("https://llvm.org/docs/LangRef.html#abstract"));
-    mDocumentationDialog->show();
+    //mDocumentationDialog->show();
 }
 
-void BitcodeDialog::on_plainTextBitcode_cursorPositionChanged()
+void BitcodeDialog::bitcodeCursorPositionChangedSlot()
 {
     if (mIgnoreCursorMove)
         return;
 
-    auto line = ui->plainTextBitcode->textCursor().block().firstLineNumber();
+    auto line = mPlainTextBitcode->textCursor().block().firstLineNumber();
     mDocumentationDialog->setHtml("");
     QString info;
     if (line >= mAnnotatedLines.length())
@@ -468,6 +510,8 @@ void BitcodeDialog::on_plainTextBitcode_cursorPositionChanged()
                 for (const auto& BB : *selectedFn)
                 {
                     auto name = QString::fromStdString(BB.getName().str());
+                    if (name.isEmpty())
+                        name = mBlockLabelMap.at(&BB);
                     auto id = getBlockId(&BB);
                     graph.addNode(id, name);
                     // https://stackoverflow.com/a/59933151/1806760
@@ -487,17 +531,17 @@ void BitcodeDialog::on_plainTextBitcode_cursorPositionChanged()
                 mGraphDialog->graphView()->selectBlockWithId(getBlockId(selectedBB));
             }
 
-            mGraphDialog->show();
+            //mGraphDialog->show();
         }
         else
         {
             qDebug() << "cursor changed" << line;
-            mGraphDialog->hide();
+            //mGraphDialog->hide();
         }
 
         info = QString("line %1, type: %2%3").arg(line).arg(typeName).arg(info2);
     }
-    ui->lineEditStatus->setText(info);
+    mLineEditStatus->setText(info);
 }
 
 void BitcodeDialog::changeEvent(QEvent* event)
@@ -509,19 +553,19 @@ void BitcodeDialog::changeEvent(QEvent* event)
             ensurePolished();
             mHighlighter->refreshColors(this);
             mHighlighter->setDocument(nullptr);
-            mHighlighter->setDocument(ui->plainTextBitcode->document());
+            mHighlighter->setDocument(mPlainTextBitcode->document());
         }
     }
-    QDialog::changeEvent(event);
+    ads::CDockManager::changeEvent(event);
 }
 
 void BitcodeDialog::closeEvent(QCloseEvent* event)
 {
-    qtSaveGeometry(this);
-    mFunctionDialog->close();
-    mDocumentationDialog->close();
-    mGraphDialog->close();
-    return QDialog::closeEvent(event);
+    qtSaveState(this);
+    //mFunctionDialog->close();
+    //mDocumentationDialog->close();
+    //mGraphDialog->close();
+    return ads::CDockManager::closeEvent(event);
 }
 
 ut64 BitcodeDialog::getBlockId(const llvm::BasicBlock* block)

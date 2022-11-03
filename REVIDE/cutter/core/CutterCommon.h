@@ -57,10 +57,12 @@ inline QString RzHexString(RVA size)
     return QString::asprintf("%#llx", size);
 }
 
+#ifndef CUTTER_EXPORT
 #ifdef CUTTER_SOURCE_BUILD
 #    define CUTTER_EXPORT Q_DECL_EXPORT
 #else
 #    define CUTTER_EXPORT Q_DECL_IMPORT
+#endif
 #endif
 
 #if defined(__has_cpp_attribute)

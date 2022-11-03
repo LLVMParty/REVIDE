@@ -32,6 +32,10 @@ if(WIN32)
     target_compile_definitions(LLVM-Wrapper INTERFACE NOMINMAX)
 endif()
 
+if(MSVC)
+    target_compile_options(LLVM-Wrapper INTERFACE /wd4624)
+endif()
+
 # https://github.com/JonathanSalwan/Triton/issues/1082#issuecomment-1030826696
 if(LLVM_LINK_LLVM_DYLIB)
     target_link_libraries(LLVM-Wrapper INTERFACE LLVM)

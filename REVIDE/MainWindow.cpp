@@ -16,6 +16,12 @@ MainWindow::MainWindow(int port, QWidget* parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    mDockManager = new ads::CDockManager(this);
+
+    auto dockWidget = new ads::CDockWidget("Log");
+    dockWidget->setWidget(ui->plainTextLog);
+    dockWidget->setFeature(ads::CDockWidget::DockWidgetClosable, false);
+    mDockManager->addDockWidgetTab(ads::TopDockWidgetArea, dockWidget);
 
     qtRestoreGeometry(this);
     qtRestoreState(this);
@@ -39,7 +45,7 @@ MainWindow::MainWindow(int port, QWidget* parent)
         loadFile(QFileInfo(irFile));
     });
     connect(ui->action_About, &QAction::triggered, [this]() {
-        QMessageBox::information(this, tr("About"), tr("REVIDE (unreleased development version)\n\nCreated by: Duncan Ogilvie\n\nKeep private for now!"));
+        QMessageBox::information(this, tr("About"), tr("REVIDE (development version)\n\nCreated by: Duncan Ogilvie\n\nThis is a work in progress!"));
     });
 }
 
@@ -85,7 +91,7 @@ void MainWindow::closeEvent(QCloseEvent* event)
 {
     qtSaveGeometry(this);
     qtSaveState(this);
-    for (QDialog* dialog : mDialogs)
+    for (auto dialog : mDialogs)
         dialog->close();
     QMainWindow::closeEvent(event);
 }
@@ -107,7 +113,11 @@ void MainWindow::llvmSlot(QString type, QString title, QByteArray data)
         ui->plainTextLog->appendPlainText(QString("Failed to load LLVM module: %1").arg(errorMessage));
     }
     mDialogs.append(bitcodeDialog);
-    bitcodeDialog->show();
+
+    auto dockWidget = new ads::CDockWidget(bitcodeDialog->windowTitle());
+    dockWidget->setWidget(bitcodeDialog);
+    mDockManager->addDockWidgetTab(ads::TopDockWidgetArea, dockWidget);
+    //bitcodeDialog->show();
     //bitcodeDialog->raise();
     //bitcodeDialog->activateWindow();
 }
