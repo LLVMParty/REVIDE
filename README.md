@@ -33,7 +33,7 @@ You have to set the [CMAKE_PREFIX_PATH](https://cmake.org/cmake/help/latest/vari
 
 ```bash
 cmake -B build "-DCMAKE_PREFIX_PATH=/path/to/llvm;/path/to/qt"
-cmake --build build --parallel
+cmake --build build --parallel --config RelWithDebInfo
 ```
 
 It is important to surround the argument with quotes on Unix platforms, because the `;` appears to have a special meaning.
