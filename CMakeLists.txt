@@ -12,7 +12,7 @@ list(PREPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/CMake)
 
 # Dependencies
 set(CMAKE_FOLDER "Dependencies")
-include(LLVM)
+find_package(LLVM-Wrapper REQUIRED)
 include(Qt)
 add_subdirectory(Dependencies)
 unset(CMAKE_FOLDER)
@@ -56,7 +56,7 @@ source_group(TREE ${CMAKE_CURRENT_LIST_DIR} FILES ${SOURCES})
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
     ${QT_LIBRARIES}
-    QScintilla
+    #QScintilla
     LLVM-Wrapper
     ads::qtadvanceddocking
 )

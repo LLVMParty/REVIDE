@@ -21,7 +21,7 @@ CodeEditor {
     color: white;
     background-color: #282C33;
 
-    qproperty-selectedLineHighlightColor: #2C323C;
+    qproperty-selectedLineHighlightColor: #454e5e;
     qproperty-errorLineHighlightColor: #FF9999;
     qproperty-lineNumberColor: #ABB2BF;
     qproperty-lineNumberBackgroundColor: #282C33;

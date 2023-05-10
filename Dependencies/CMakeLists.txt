@@ -1,6 +1,7 @@
 # https://github.com/TheLartians/CPM.cmake/releases
 include(CPM.cmake)
 
+#[[
 # Add QScintilla dependency
 CPMAddPackage(
 	NAME QScintilla
@@ -37,7 +38,7 @@ if(QScintilla_ADDED)
 	)
 	source_group(TREE ${QScintilla_SOURCE_DIR} FILES ${SOURCES})
 endif()
-
+#]]
 CPMAddPackage(
 	NAME QtADS
 	VERSION 3.8.3

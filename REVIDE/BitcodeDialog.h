@@ -18,15 +18,17 @@ namespace llvm
 {
 class Function;
 class BasicBlock;
+class Value;
 } // namespace llvm
 
 enum class AnnotationType
 {
-    Nothing,
-    Function,
-    BasicBlockStart,
-    Instruction,
-    BasicBlockEnd,
+    Nothing, // nullptr
+    Function, // llvm::Function
+    BasicBlockStart, // llvm::BasicBlock
+    Instruction, // llvm::Instruction
+    BasicBlockEnd, // llvm::BasicBlock
+    Global, // llvm::Value
 };
 
 static const char* annotationTypeName[] = {
@@ -35,6 +37,7 @@ static const char* annotationTypeName[] = {
     "BasicBlockStart",
     "Instruction",
     "BasicBlockEnd",
+    "Global",
 };
 
 struct Annotation
@@ -78,20 +81,25 @@ private slots:
     void godboltClickedSlot();
     void helpClickedSlot();
     void bitcodeCursorPositionChangedSlot();
+    void bitcodeContextMenuSlot(const QPoint& pos);
+    void followValueSlot();
 
 private:
+    void setupMenu();
     ut64 getBlockId(const llvm::BasicBlock* block);
+    void gotoLine(int line, bool centerInView);
 
 private:
     CodeEditor* mPlainTextBitcode = nullptr;
     QLineEdit* mLineEditStatus = nullptr;
     QPushButton* mButtonGodbolt = nullptr;
     QPushButton* mButtonHelp = nullptr;
+    QAction* mFollowValue = nullptr;
 
     LLVMGlobalContext* mContext = nullptr;
     BitcodeHighlighter* mHighlighter = nullptr;
     QVector<AnnotatedLine> mAnnotatedLines;
-    QVector<int> mFunctionLineMap;
+    std::unordered_map<const llvm::Function*, int> mFunctionLineMap;
     std::unordered_map<const llvm::BasicBlock*, int> mBlockLineMap;
     std::unordered_map<const llvm::BasicBlock*, QString> mBlockLabelMap;
     QString mErrorMessage = "index out of bounds";
@@ -106,4 +114,5 @@ private:
     ut64 mCurrentGraphId = 0;
     bool mIgnoreCursorMove = false;
     ads::CDockManager* mDockManager = nullptr;
+    llvm::Value* mSelectedValue = nullptr;
 };

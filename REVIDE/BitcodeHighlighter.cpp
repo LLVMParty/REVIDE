@@ -139,7 +139,6 @@ static const char* keywords[] = {
     "x86_stdcallcc",
     "x86_thiscallcc",
     "zeroext",
-    "label",
 
     // Additional keywords
     "source_filename",
@@ -245,7 +244,7 @@ void BitcodeHighlighter::refreshColors(const BitcodeDialog* style)
     // constants: 12, 0x33
     addRule(R"regex(\b\d+\b)regex")
         .color(style->constantColor);
-    addRule(R"regex((true|false|void|none|null))regex")
+    addRule(R"regex(\b(true|false|void|none|null|label|token|metadata|ptr)\b)regex")
         .color(style->constantColor);
 
     // Keywords
@@ -294,18 +293,18 @@ void BitcodeHighlighter::refreshColors(const BitcodeDialog* style)
         .bold()
         .color(style->functionColor);
 
-    // i64
+    // i64 and other types
     addRule(R"regex(i\d+)regex")
         .color(style->integerTypeColor);
 
     // metadata
-    addRule(R"regex(!.+$)regex")
+    addRule(R"regex(![^ ,\(\)]+)regex")
         .color(style->metadataColor);
-    addRule(R"regex(, !)regex")
+    addRule(R"regex(\bmetadata\b)regex")
         .color(style->metadataColor);
     addRule(R"regex(^attributes #\d+ = .+$)regex")
         .color(style->metadataColor);
-    addRule(R"regex( = "[^"]+"$)regex")
+    addRule(R"regex(^!\d+ = .+$)regex")
         .color(style->metadataColor);
 
     // Line comments

@@ -146,12 +146,33 @@ void CodeEditor::highlightCurrentLine()
         extraSelections.append(selection);
     }
 
-    #if 0
+#if 0
     {
         QTextCursor cursor = textCursor();
         cursor.select(QTextCursor::WordUnderCursor);
-    
         auto plainText = toPlainText();
+
+        QString pattern("%m.addr");
+        QStringMatcher matcher(pattern);
+        auto from = 0;
+        for(auto from = 0; ;)
+        {
+            auto index = matcher.indexIn(plainText, from);
+            if(index == -1)
+                break;
+
+            QTextEdit::ExtraSelection currentWord;
+            currentWord.format.setFontUnderline(true);
+            cursor.setPosition(index, QTextCursor::MoveAnchor);
+            cursor.setPosition(index + pattern.length(), QTextCursor::KeepAnchor);
+            currentWord.cursor = cursor;
+            extraSelections.append(currentWord);
+
+            from = index + pattern.length();
+        }
+        /*
+    
+
         auto selectionStart = cursor.selectionStart();
         auto selectionEnd = cursor.selectionEnd();
         auto word = plainText.mid(selectionStart, selectionEnd - selectionStart);
@@ -168,9 +189,9 @@ void CodeEditor::highlightCurrentLine()
                 currentWord.cursor = cursor;
                 extraSelections.append(currentWord);
             }
-        }
+        }*/
     }
-    #endif
+#endif
 
     setExtraSelections(extraSelections);
 }

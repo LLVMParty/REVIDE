@@ -71,6 +71,9 @@ struct LineAnnotationWriter : llvm::AssemblyAnnotationWriter
     void printInfoComment(const llvm::Value& V,
         llvm::formatted_raw_ostream& OS) override
     {
+        if(llvm::dyn_cast<llvm::Instruction>(&V) == nullptr) {
+            OS << "\n; META:Global:" << &V;
+        }
     }
 };
 
@@ -127,7 +130,7 @@ struct LLVMGlobalContext
         Module->print(rso, &annotationWriter, true, true);
         QVector<AnnotatedLine> annotatedLines;
         QString line;
-        Annotation annotation;
+        Annotation nextAnnotation;
         auto flushLine = [&]()
         {
             if (line.startsWith("; META:"))
@@ -138,6 +141,7 @@ struct LLVMGlobalContext
                 if (ptr.startsWith("0x"))
                     ptr = ptr.right(ptr.length() - 2);
                 auto x = ptr.toULongLong(nullptr, 16);
+                Annotation annotation;
                 annotation.ptr = (void*)x;
                 annotation.line = annotatedLines.length();
                 if (type == "Function")
@@ -157,13 +161,39 @@ struct LLVMGlobalContext
                 {
                     annotation.type = AnnotationType::Instruction;
                 }
+                else if (type == "Global")
+                {
+                    annotation.type = AnnotationType::Global;
+                }
+
+                if(annotation.type == AnnotationType::Global)
+                {
+                    // Global annotations are emitted on the next line
+                    if(!annotatedLines.empty())
+                    {
+                        annotation.line--;
+                        annotatedLines.back().annotation = annotation;
+                    }
+                }
+                else
+                {
+                    nextAnnotation = annotation;
+                }
             }
             else
             {
-                annotatedLines.push_back({ line, annotation });
-                if (annotation.type == AnnotationType::BasicBlockEnd)
+                annotatedLines.push_back({ line, nextAnnotation });
+                if (nextAnnotation.type == AnnotationType::BasicBlockEnd)
                 {
-                    annotation = Annotation();
+                    nextAnnotation = Annotation();
+                }
+                else if(nextAnnotation.type == AnnotationType::Function)
+                {
+                    auto function = (llvm::Function*)nextAnnotation.ptr;
+                    if(line.startsWith("declare") || line.endsWith('{'))
+                    {
+                        nextAnnotation = Annotation();
+                    }
                 }
             }
             line.clear();
@@ -191,7 +221,11 @@ BitcodeDialog::BitcodeDialog(QWidget* parent)
     auto codeWidget = new QWidget();
     codeWidget->setWindowTitle(tr("Code"));
     mPlainTextBitcode = new CodeEditor(codeWidget);
+    mPlainTextBitcode->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(mPlainTextBitcode, &CodeEditor::cursorPositionChanged, this, &BitcodeDialog::bitcodeCursorPositionChangedSlot);
+    connect(mPlainTextBitcode, &CodeEditor::customContextMenuRequested, this, &BitcodeDialog::bitcodeContextMenuSlot);
+
+    setupMenu();
 
     mLineEditStatus = new QLineEdit(codeWidget);
     mLineEditStatus->setReadOnly(true);
@@ -231,13 +265,13 @@ BitcodeDialog::BitcodeDialog(QWidget* parent)
     //mFunctionDialog->show();
     connect(mFunctionDialog, &FunctionDialog::functionClicked, [this](int index)
         {
-            mContext->Module->getFunctionList();
-            QString name = mContext->Functions[index]->getName().str().c_str();
-            auto line = mFunctionLineMap[index];
-            auto block = mPlainTextBitcode->document()->findBlockByNumber(line);
-            mPlainTextBitcode->moveCursor(QTextCursor::End);
-            mPlainTextBitcode->setTextCursor(QTextCursor(block.previous()));
-            mPlainTextBitcode->setTextCursor(QTextCursor(block));
+            auto function = mContext->Functions[index];
+            auto line = mFunctionLineMap[function];
+            if(line + 1 < mAnnotatedLines.size() && mAnnotatedLines[line + 1].annotation.ptr == function)
+            {
+                line++;
+            }
+            gotoLine(line, false);
         });
 
     mDocumentationDialog = new DocumentationDialog(this);
@@ -252,17 +286,7 @@ BitcodeDialog::BitcodeDialog(QWidget* parent)
             {
                 qDebug() << "blockSelectionChanged" << blockId;
                 auto line = mBlockLineMap.at(itr->second);
-                auto block = mPlainTextBitcode->document()->findBlockByNumber(line);
-                mIgnoreCursorMove = true;
-                // Attempt to center the start of the block in the view
-                mPlainTextBitcode->moveCursor(QTextCursor::End);
-                mPlainTextBitcode->setTextCursor(QTextCursor(block));
-                auto cursor = mPlainTextBitcode->textCursor();
-                cursor.movePosition(QTextCursor::Up, QTextCursor::MoveAnchor, 10);
-                mPlainTextBitcode->setTextCursor(cursor);
-                mIgnoreCursorMove = false;
-                mPlainTextBitcode->setTextCursor(QTextCursor(block));
-                // TODO: prevent the selection?
+                gotoLine(line, true);
             }
             else
             {
@@ -313,6 +337,12 @@ bool BitcodeDialog::load(const QString& type, const QByteArray& data, QString& e
         }
         mAnnotatedLines = mContext->Dump();
         QString text;
+        mFunctionLineMap.clear();
+        mBlockLineMap.clear();
+        mFunctionGraphs.clear();
+        mBlockIdToBlock.clear();
+        mBlockToBlockId.clear();
+        mSelectedValue = nullptr;
         for (const auto& annotatedLine : mAnnotatedLines)
         {
             auto line = annotatedLine.annotation.line;
@@ -321,10 +351,8 @@ bool BitcodeDialog::load(const QString& type, const QByteArray& data, QString& e
             {
             case AnnotationType::Function:
             {
-                if (!mFunctionLineMap.isEmpty() && mFunctionLineMap.back() == line)
-                    mFunctionLineMap.back() = line;
-                else
-                    mFunctionLineMap.push_back(annotatedLine.annotation.line);
+                auto function = (llvm::Function*)annotatedLine.annotation.ptr;
+                mFunctionLineMap.emplace(function, annotatedLine.annotation.line);
             }
             break;
 
@@ -419,12 +447,185 @@ void BitcodeDialog::helpClickedSlot()
     //mDocumentationDialog->show();
 }
 
+struct Token
+{
+    QString text;
+    bool isVariable = false;
+};
+
+static std::vector<Token> tokenizeLlvm(const QString& text)
+{
+    // TODO: extremely hacky
+    std::vector<Token> tokens;
+    Token cur;
+    auto flushToken = [&]()
+    {
+        if(!cur.text.isEmpty())
+            tokens.push_back(cur);
+        cur = Token();
+    };
+    bool isQuoted = false;
+    for(int i = 0; i < text.length(); i++)
+    {
+        auto ch = text[i];
+        if(isQuoted)
+        {
+            if(ch == '\"')
+            {
+                isQuoted = false;
+                cur.text.push_back(ch);
+                flushToken();
+            }
+            else
+            {
+                cur.text.push_back(ch);
+            }
+        }
+        else if(cur.isVariable)
+        {
+            if(ch.isLetterOrNumber() || ch == '-' || ch =='.' || ch == '$')
+            {
+                cur.text.push_back(ch);
+            }
+            else
+            {
+                flushToken();
+                cur.text.push_back(ch);
+                if(ch == ' ' || ch == ',' || ch == '(' || ch == ')')
+                {
+                    flushToken();
+                }
+            }
+        }
+        else
+        {
+            if(ch == '%' || ch == '@')
+            {
+                flushToken();
+                cur.isVariable = true;
+                if(i + 1 < text.length() && text[i + 1] == '\"')
+                {
+                    isQuoted = true;
+                    cur.text.push_back(ch);
+                    cur.text.push_back('\"');
+                    i++;
+                }
+                else
+                {
+                    cur.text.push_back(ch);
+                }
+            }
+            else if(ch == '\"')
+            {
+                isQuoted = true;
+                flushToken();
+                cur.text.push_back(ch);
+            }
+            else if(ch == ' ' || ch == ',' || ch == '(' || ch == ')')
+            {
+                flushToken();
+                cur.text.push_back(ch);
+                flushToken();
+            }
+            else
+            {
+                cur.text.push_back(ch);
+            }
+        }
+    }
+    flushToken();
+    return tokens;
+}
+
+static llvm::Value* valueFromOperand(llvm::Value* op)
+{
+    if(auto mdv = llvm::dyn_cast<llvm::MetadataAsValue>(op))
+    {
+        auto md = mdv->getMetadata();
+        if(auto vmd = llvm::dyn_cast<llvm::ValueAsMetadata>(md))
+        {
+            return vmd->getValue();
+        }
+        else if(auto cmd = llvm::dyn_cast<llvm::ConstantAsMetadata>(md))
+        {
+            return cmd->getValue();
+        }
+        else
+        {
+            llvm::errs() << "UNKNOWN METADATA: " << *mdv << "\n";
+            return nullptr;
+        }
+    }
+    else if(auto fn = llvm::dyn_cast<llvm::Function>(op))
+    {
+        return op;
+    }
+    else if(auto inst = llvm::dyn_cast<llvm::Instruction>(op))
+    {
+        return op;
+    }
+    else if(auto constant = llvm::dyn_cast<llvm::Constant>(op))
+    {
+        return op;
+    }
+    else if(auto bbLabel = llvm::dyn_cast<llvm::BasicBlock>(op))
+    {
+        return op;
+    }
+    else if(auto arg = llvm::dyn_cast<llvm::Argument>(op))
+    {
+        return op;
+    }
+    else
+    {
+        llvm::errs() << "UNKNOWN " << *op << "\ntype:";
+        op->getType()->print(llvm::errs());
+        llvm::errs() << "\n";
+        return nullptr;
+    }
+}
+
+static QString valueName(const llvm::Value* value)
+{
+    std::string str;
+    llvm::raw_string_ostream rso(str);
+    value->printAsOperand(rso, false);
+    return QString::fromStdString(str);
+}
+
+static llvm::Value* findSelectedValue(const QString& selectedName, llvm::Instruction* instruction)
+{
+    if(selectedName == valueName(instruction))
+    {
+        return instruction;
+    }
+
+    for(unsigned int i = 0; i < instruction->getNumOperands(); i++)
+    {
+        auto op = instruction->getOperand(i);
+        auto opValue = valueFromOperand(op);
+        if(opValue != nullptr)
+        {
+            auto opName = valueName(opValue);
+            if(selectedName == valueName(opValue))
+            {
+                return opValue;
+            }
+        }
+    }
+
+    return nullptr;
+}
+
 void BitcodeDialog::bitcodeCursorPositionChangedSlot()
 {
     if (mIgnoreCursorMove)
         return;
 
-    auto line = mPlainTextBitcode->textCursor().block().firstLineNumber();
+    mSelectedValue = nullptr;
+    auto cursor = mPlainTextBitcode->textCursor();
+    auto line = cursor.block().firstLineNumber();
+    auto column = cursor.columnNumber();
     mDocumentationDialog->setHtml("");
     QString info;
     if (line >= mAnnotatedLines.length())
@@ -485,11 +686,60 @@ void BitcodeDialog::bitcodeCursorPositionChangedSlot()
                 // instruction->getMetadata()
             }
 
+            if(annotation.line == line)
+            {
+                // Single line instruction
+                auto tokens = tokenizeLlvm(mAnnotatedLines[line].line);
+
+                qDebug() << "tokens {";
+                for(const auto& token : tokens)
+                {
+                    qDebug() << token.text;
+                }
+                qDebug() << "}";
+
+                Token* selectedToken = nullptr;
+                for(size_t i = 0, start = 0; i < tokens.size(); i++)
+                {
+                    auto token = &tokens[i];
+                    auto length = token->text.length();
+                    if(column - 1 >= start && column - 1 < start + length)
+                    {
+                        qDebug() << "chuj:" << token->text;
+                        selectedToken = token;
+                        break;
+                    }
+                    start += length;
+                }
+
+                if(selectedToken != nullptr && selectedToken->isVariable)
+                {
+                    if(auto selectedValue = findSelectedValue(selectedToken->text, instruction))
+                    {
+                        llvm::errs() << "selected: " << *selectedValue << "\n";
+                        info2 += QString(", selected: '%1'").arg(selectedToken->text);
+                        mSelectedValue = selectedValue;
+                    }
+                }
+            }
+            else
+            {
+                // TODO: support multi-line instructions
+                info2 += QString(", multiline!");
+            }
+
             auto itr = instructionDocumentation.find(opcode);
             if (itr != instructionDocumentation.end())
                 mDocumentationDialog->setHtml(itr->second);
 
             selectedBB = instruction->getParent();
+        }
+        break;
+
+        case AnnotationType::Global:
+        {
+            auto value = (llvm::Value*)annotation.ptr;
+            info2 = QString(", name: %1").arg(value->getName().str().c_str());
         }
         break;
         }
@@ -539,9 +789,125 @@ void BitcodeDialog::bitcodeCursorPositionChangedSlot()
             //mGraphDialog->hide();
         }
 
-        info = QString("line %1, type: %2%3").arg(line).arg(typeName).arg(info2);
+        info = QString("line %1, col %2, type: %3%4").arg(line).arg(column).arg(typeName, info2);
     }
     mLineEditStatus->setText(info);
+}
+
+void BitcodeDialog::bitcodeContextMenuSlot(const QPoint& pos)
+{
+    auto menu = new QMenu(this);
+    if(mSelectedValue != nullptr)
+    {
+        menu->addAction(mFollowValue);
+    }
+    if(!menu->actions().empty())
+    {
+        auto gpos = mPlainTextBitcode->mapToGlobal(pos);
+        gpos.setX(gpos.x() + mPlainTextBitcode->lineNumberAreaWidth());
+        menu->popup(gpos);
+    }
+}
+
+void BitcodeDialog::followValueSlot()
+{
+    auto sel = mSelectedValue;
+    if(sel == nullptr)
+    {
+        return;
+    }
+
+    if(auto argument = llvm::dyn_cast<llvm::Argument>(sel))
+    {
+        qDebug() << "follow argument";
+        auto function = argument->getParent();
+        auto itr = mFunctionLineMap.find(function);
+        if(itr != mFunctionLineMap.end())
+        {
+            // TODO: select the argument itself
+            auto line = itr->second;
+            if(line + 1 < mAnnotatedLines.size() && mAnnotatedLines[line + 1].annotation.ptr == function)
+            {
+                line++;
+            }
+            gotoLine(line, false);
+        }
+    }
+    else if(auto function = llvm::dyn_cast<llvm::Function>(sel))
+    {
+        qDebug() << "follow function";
+        auto itr = mFunctionLineMap.find(function);
+        if(itr != mFunctionLineMap.end())
+        {
+            auto line = itr->second;
+            if(line + 1 < mAnnotatedLines.size() && mAnnotatedLines[line + 1].annotation.ptr == function)
+            {
+                line++;
+            }
+            gotoLine(line, false);
+        }
+    }
+    else if(auto basicBlock = llvm::dyn_cast<llvm::BasicBlock>(sel))
+    {
+        qDebug() << "follow basic block";
+        auto itr = mBlockLineMap.find(basicBlock);
+        if(itr != mBlockLineMap.end())
+        {
+            gotoLine(itr->second, true);
+        }
+    }
+    else if(auto instruction = llvm::dyn_cast<llvm::Instruction>(sel))
+    {
+        qDebug() << "follow instruction";
+        auto basicBlock = instruction->getParent();
+        auto itr = mBlockLineMap.find(basicBlock);
+        if(itr != mBlockLineMap.end())
+        {
+            for(auto line = itr->second; line < mAnnotatedLines.size(); line++)
+            {
+                const auto& annotation = mAnnotatedLines[line].annotation;
+                if(annotation.type == AnnotationType::BasicBlockEnd || annotation.type == AnnotationType::Function)
+                {
+                    break;
+                }
+
+                if(annotation.type == AnnotationType::Instruction && annotation.ptr == instruction)
+                {
+                    gotoLine(line, true);
+                    break;
+                }
+            }
+        }
+    }
+    else if(auto global = llvm::dyn_cast<llvm::GlobalValue>(sel))
+    {
+        qDebug() << "follow global";
+        for(auto line = 0; line < mAnnotatedLines.size(); line++)
+        {
+            const auto& annotation = mAnnotatedLines[line].annotation;
+            if(annotation.type == AnnotationType::Function)
+            {
+                // Globals are declared before the functions
+                break;
+            }
+
+            if(annotation.type == AnnotationType::Global && annotation.ptr == global)
+            {
+                gotoLine(line, false);
+                break;
+            }
+        }
+    }
+    else
+    {
+        qDebug() << "follow UNKNOWN";
+    }
+}
+
+void BitcodeDialog::setupMenu()
+{
+    mFollowValue = new QAction("Follow value", this);
+    connect(mFollowValue, &QAction::triggered, this, &BitcodeDialog::followValueSlot);
 }
 
 void BitcodeDialog::changeEvent(QEvent* event)
@@ -581,4 +947,32 @@ ut64 BitcodeDialog::getBlockId(const llvm::BasicBlock* block)
         mBlockIdToBlock[id] = block;
     }
     return itr->second;
+}
+
+void BitcodeDialog::gotoLine(int line, bool centerInView)
+{
+    auto block = mPlainTextBitcode->document()->findBlockByNumber(line);
+    if(!block.isValid())
+        return;
+
+    if(centerInView)
+    {
+        mIgnoreCursorMove = true;
+        // Attempt to center the start of the block in the view
+        mPlainTextBitcode->moveCursor(QTextCursor::End);
+        mPlainTextBitcode->setTextCursor(QTextCursor(block));
+        auto cursor = mPlainTextBitcode->textCursor();
+        cursor.movePosition(QTextCursor::Up, QTextCursor::MoveAnchor, 10);
+        mPlainTextBitcode->setTextCursor(cursor);
+        mIgnoreCursorMove = false;
+        mPlainTextBitcode->setTextCursor(QTextCursor(block));
+    }
+    else
+    {
+        mPlainTextBitcode->moveCursor(QTextCursor::End);
+        mPlainTextBitcode->setTextCursor(QTextCursor(block.previous()));
+        mPlainTextBitcode->setTextCursor(QTextCursor(block));
+    }
+
+    // TODO: prevent the selection?
 }
