@@ -691,12 +691,12 @@ void BitcodeDialog::bitcodeCursorPositionChangedSlot()
                 // Single line instruction
                 auto tokens = tokenizeLlvm(mAnnotatedLines[line].line);
 
-                qDebug() << "tokens {";
+                /*qDebug() << "tokens {";
                 for(const auto& token : tokens)
                 {
                     qDebug() << token.text;
                 }
-                qDebug() << "}";
+                qDebug() << "}";*/
 
                 Token* selectedToken = nullptr;
                 for(size_t i = 0, start = 0; i < tokens.size(); i++)
@@ -705,7 +705,6 @@ void BitcodeDialog::bitcodeCursorPositionChangedSlot()
                     auto length = token->text.length();
                     if(column - 1 >= start && column - 1 < start + length)
                     {
-                        qDebug() << "chuj:" << token->text;
                         selectedToken = token;
                         break;
                     }
@@ -714,9 +713,10 @@ void BitcodeDialog::bitcodeCursorPositionChangedSlot()
 
                 if(selectedToken != nullptr && selectedToken->isVariable)
                 {
+                    mPlainTextBitcode->setTokenHighlights(selectedToken->text, {});
                     if(auto selectedValue = findSelectedValue(selectedToken->text, instruction))
                     {
-                        llvm::errs() << "selected: " << *selectedValue << "\n";
+                        //llvm::errs() << "selected: " << *selectedValue << "\n";
                         info2 += QString(", selected: '%1'").arg(selectedToken->text);
                         mSelectedValue = selectedValue;
                     }

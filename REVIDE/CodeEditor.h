@@ -78,6 +78,7 @@ public:
     void lineNumberAreaPaintEvent(QPaintEvent* event);
     int lineNumberAreaWidth();
     void setErrorLine(int line);
+    void setTokenHighlights(const QString& token, const QList<int>& lines);
 
 protected:
     void resizeEvent(QResizeEvent* event) override;
@@ -91,6 +92,8 @@ private slots:
 private:
     QWidget* lineNumberArea;
     int mErrorLine = -1;
+    QString mHighlightToken;
+    QList<int> mHighlightLines;
 };
 
 class LineNumberArea : public QWidget

@@ -88,6 +88,13 @@ void CodeEditor::setErrorLine(int line)
     mErrorLine = line;
 }
 
+void CodeEditor::setTokenHighlights(const QString& token, const QList<int>& lines)
+{
+    mHighlightToken = token;
+    mHighlightLines = lines;
+    highlightCurrentLine(); // TODO: this will now be done twice
+}
+
 void CodeEditor::updateLineNumberAreaWidth(int /* newBlockCount */)
 {
     setViewportMargins(lineNumberAreaWidth(), 0, 0, 0);
@@ -146,52 +153,34 @@ void CodeEditor::highlightCurrentLine()
         extraSelections.append(selection);
     }
 
-#if 0
+    if(!mHighlightToken.isEmpty())
     {
         QTextCursor cursor = textCursor();
-        cursor.select(QTextCursor::WordUnderCursor);
-        auto plainText = toPlainText();
 
-        QString pattern("%m.addr");
-        QStringMatcher matcher(pattern);
-        auto from = 0;
-        for(auto from = 0; ;)
+        if(mHighlightLines.empty())
         {
-            auto index = matcher.indexIn(plainText, from);
-            if(index == -1)
-                break;
+            // Global selection
+            auto plainText = toPlainText();
 
-            QTextEdit::ExtraSelection currentWord;
-            currentWord.format.setFontUnderline(true);
-            cursor.setPosition(index, QTextCursor::MoveAnchor);
-            cursor.setPosition(index + pattern.length(), QTextCursor::KeepAnchor);
-            currentWord.cursor = cursor;
-            extraSelections.append(currentWord);
-
-            from = index + pattern.length();
-        }
-        /*
-    
-
-        auto selectionStart = cursor.selectionStart();
-        auto selectionEnd = cursor.selectionEnd();
-        auto word = plainText.mid(selectionStart, selectionEnd - selectionStart);
-        if(!word.isEmpty())
-        {
-            QRegularExpressionMatchIterator matchIterator = QRegularExpression(word).globalMatch(plainText);
-            while (matchIterator.hasNext())
+            QStringMatcher matcher(mHighlightToken);
+            auto from = 0;
+            for(auto from = 0; ;)
             {
-                QRegularExpressionMatch match = matchIterator.next();
+                auto index = matcher.indexIn(plainText, from);
+                if(index == -1)
+                    break;
+
                 QTextEdit::ExtraSelection currentWord;
                 currentWord.format.setFontUnderline(true);
-                cursor.setPosition(match.capturedStart(), QTextCursor::MoveAnchor);
-                cursor.setPosition(match.capturedStart() + match.capturedLength(), QTextCursor::KeepAnchor);
+                cursor.setPosition(index, QTextCursor::MoveAnchor);
+                cursor.setPosition(index + mHighlightToken.length(), QTextCursor::KeepAnchor);
                 currentWord.cursor = cursor;
                 extraSelections.append(currentWord);
+
+                from = index + mHighlightToken.length();
             }
-        }*/
+        }
     }
-#endif
 
     setExtraSelections(extraSelections);
 }
