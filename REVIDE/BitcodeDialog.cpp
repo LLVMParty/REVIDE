@@ -222,6 +222,7 @@ BitcodeDialog::BitcodeDialog(QWidget* parent)
     codeWidget->setWindowTitle(tr("Code"));
     mPlainTextBitcode = new CodeEditor(codeWidget);
     mPlainTextBitcode->setContextMenuPolicy(Qt::CustomContextMenu);
+    mPlainTextBitcode->setHackedReadonly(true);
     connect(mPlainTextBitcode, &CodeEditor::cursorPositionChanged, this, &BitcodeDialog::bitcodeCursorPositionChangedSlot);
     connect(mPlainTextBitcode, &CodeEditor::customContextMenuRequested, this, &BitcodeDialog::bitcodeContextMenuSlot);
 
@@ -907,6 +908,9 @@ void BitcodeDialog::followValueSlot()
 void BitcodeDialog::setupMenu()
 {
     mFollowValue = new QAction("Follow value", this);
+    mFollowValue->setShortcutContext(Qt::WidgetShortcut);
+    mFollowValue->setShortcut(QKeySequence("F"));
+    mPlainTextBitcode->addAction(mFollowValue);
     connect(mFollowValue, &QAction::triggered, this, &BitcodeDialog::followValueSlot);
 }
 

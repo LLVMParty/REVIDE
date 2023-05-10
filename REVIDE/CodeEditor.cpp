@@ -53,6 +53,8 @@
 #include <QPainter>
 #include <QTextBlock>
 #include <QRegularExpression>
+#include <QDebug>
+#include <QAction>
 
 CodeEditor::CodeEditor(QWidget* parent)
     : QPlainTextEdit(parent)
@@ -95,6 +97,11 @@ void CodeEditor::setTokenHighlights(const QString& token, const QList<int>& line
     highlightCurrentLine(); // TODO: this will now be done twice
 }
 
+void CodeEditor::setHackedReadonly(bool readonly)
+{
+    mHackedReadonly = readonly;
+}
+
 void CodeEditor::updateLineNumberAreaWidth(int /* newBlockCount */)
 {
     setViewportMargins(lineNumberAreaWidth(), 0, 0, 0);
@@ -126,6 +133,51 @@ void CodeEditor::changeEvent(QEvent* event)
         highlightCurrentLine();
     }
     QPlainTextEdit::changeEvent(event);
+}
+
+void CodeEditor::keyPressEvent(QKeyEvent* event)
+{
+    if(mHackedReadonly)
+    {
+        // https://doc.qt.io/qt-6/qplaintextedit.html#read-only-key-bindings
+        switch(event->key())
+        {
+        case Qt::Key_Copy:
+        case Qt::Key_Left:
+        case Qt::Key_Right:
+        case Qt::Key_Up:
+        case Qt::Key_Down:
+        case Qt::Key_PageUp:
+        case Qt::Key_PageDown:
+        case Qt::Key_Home:
+        case Qt::Key_End:
+        case Qt::Key_Shift:
+        case Qt::Key_Alt:
+        case Qt::Key_Control:
+        case Qt::Key_Meta:
+            break;
+        case Qt::Key_A:
+            // Select all
+            if(event->modifiers() & (Qt::ControlModifier | Qt::MetaModifier))
+                break;
+        default:
+        {
+            QKeySequence seq(event->modifiers() | event->key());
+            Q_FOREACH(auto action, actions())
+            {
+                auto shortcut = action->shortcut();
+                if(!shortcut.isEmpty() && shortcut == seq)
+                {
+                    action->trigger();
+                    event->accept();
+                    break;
+                }
+            }
+            return;
+        }
+        }
+    }
+    QPlainTextEdit::keyPressEvent(event);
 }
 
 void CodeEditor::highlightCurrentLine()

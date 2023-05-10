@@ -79,10 +79,12 @@ public:
     int lineNumberAreaWidth();
     void setErrorLine(int line);
     void setTokenHighlights(const QString& token, const QList<int>& lines);
+    void setHackedReadonly(bool readonly);
 
 protected:
     void resizeEvent(QResizeEvent* event) override;
     void changeEvent(QEvent* event) override;
+    void keyPressEvent(QKeyEvent* event) override;
 
 private slots:
     void updateLineNumberAreaWidth(int newBlockCount);
@@ -94,6 +96,7 @@ private:
     int mErrorLine = -1;
     QString mHighlightToken;
     QList<int> mHighlightLines;
+    bool mHackedReadonly = false;
 };
 
 class LineNumberArea : public QWidget
