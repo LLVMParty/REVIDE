@@ -70,6 +70,13 @@ int main(int argc, char* argv[])
         // TODO: if stylesheet parsing fails Qt continues with a warning
     }
 
+    {
+        QFile file(":/dark/stylesheet.qss");
+        file.open(QFile::ReadOnly | QFile::Text);
+        QTextStream stream(&file);
+        qDebug() << stream.readAll();
+    }
+
     // Create Cutter instance
     CutterCore core(nullptr);
     Config()->loadInitial();
