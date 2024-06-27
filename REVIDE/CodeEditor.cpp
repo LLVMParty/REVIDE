@@ -160,6 +160,10 @@ void CodeEditor::keyPressEvent(QKeyEvent* event)
             // Select all
             if(event->modifiers() & (Qt::ControlModifier | Qt::MetaModifier))
                 break;
+        case Qt::Key_C:
+            // Copy
+            if (event->modifiers() & (Qt::ControlModifier | Qt::MetaModifier))
+                break;
         default:
         {
             QKeySequence seq(event->modifiers() | event->key());

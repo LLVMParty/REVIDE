@@ -108,9 +108,13 @@ struct LLVMGlobalContext
                 {
                     ss << ", column: " << errorColumn + 1;
                 }
+                ss << ", message: " << Err.getMessage().str();
+                ss << ", line contents: '" << Err.getLineContents().str() << "'";
             }
-            ss << ", message: " << Err.getMessage().str();
-            ss << ", line contents: '" << Err.getLineContents().str() << "'";
+            else
+            {
+                ss << Err.getMessage().str();
+            }
             errorMessage = QString::fromStdString(ss.str()).trimmed();
             return false;
         }
@@ -329,7 +333,14 @@ bool BitcodeDialog::load(const QString& type, const QByteArray& data, QString& e
         {
             mErrorMessage = errorMessage;
             mPlainTextBitcode->setErrorLine(mErrorLine);
-            mPlainTextBitcode->setPlainText(data);
+            if (data.length() > 4 && data[0] == 'B' && data[1] == 'C' && data[2] == 0xC0 && data[3] == 0xDE)
+            {
+                mPlainTextBitcode->setPlainText(errorMessage);
+            }
+            else
+            {
+                mPlainTextBitcode->setPlainText(data);
+            }
             auto cursor = mPlainTextBitcode->textCursor();
             cursor.clearSelection();
             cursor.setPosition(mPlainTextBitcode->document()->findBlockByLineNumber(mErrorLine - 1).position() + mErrorColumn);
