@@ -32,13 +32,16 @@ if(MSVC)
     set(CMAKE_C_FLAGS_RELWITHDEBINFO "/ZI /Od /Ob0 /DNDEBUG" CACHE STRING "" FORCE)
     set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "/ZI /Od /Ob0 /DNDEBUG" CACHE STRING "" FORCE)
 
-#    if(${LLVM_USE_CRT_RELEASE} STREQUAL "MD")
-#        set(CMAKE_MSVC_RUNTIME_LIBRARY MultiThreadedDLL)
-#    elseif(${LLVM_USE_CRT_RELEASE} STREQUAL "MT")
-#        set(CMAKE_MSVC_RUNTIME_LIBRARY MultiThreaded)
-#    else()
-#        message(FATAL_ERROR "Unsupported LLVM_USE_CRT_RELEASE=${LLVM_USE_CRT_RELEASE}")
-#    endif()
+    if(NOT DEFINED LLVM_USE_CRT_RELEASE)
+        # Reference: https://github.com/llvm/llvm-project/issues/62739
+        message(WARNING "LLVM_USE_CRT_RELEASE is not set, keeping defaults")
+    elseif(${LLVM_USE_CRT_RELEASE} STREQUAL "MD")
+        set(CMAKE_MSVC_RUNTIME_LIBRARY MultiThreadedDLL)
+    elseif(${LLVM_USE_CRT_RELEASE} STREQUAL "MT")
+        set(CMAKE_MSVC_RUNTIME_LIBRARY MultiThreaded)
+    else()
+        message(FATAL_ERROR "Unsupported LLVM_USE_CRT_RELEASE=${LLVM_USE_CRT_RELEASE}")
+    endif()
 endif()
 
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
