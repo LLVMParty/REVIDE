@@ -80,7 +80,14 @@ int CodeEditor::lineNumberAreaWidth()
         ++digits;
     }
 
-    int space = 3 + fontMetrics().horizontalAdvance(QLatin1Char('9')) * digits;
+    auto metrics = fontMetrics();
+    auto character = QLatin1Char('9');
+#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
+    int digitWidth = metrics.horizontalAdvance(character);
+#else
+    int digitWidth = metrics.width(character);
+#endif
+    int space = 3 + digitWidth * digits;
 
     return space;
 }
@@ -219,7 +226,6 @@ void CodeEditor::highlightCurrentLine()
             auto plainText = toPlainText();
 
             QStringMatcher matcher(mHighlightToken);
-            auto from = 0;
             for(auto from = 0; ;)
             {
                 auto index = matcher.indexIn(plainText, from);
