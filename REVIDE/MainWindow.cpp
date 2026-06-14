@@ -3,13 +3,13 @@
 #include "BitcodeDialog.h"
 #include "ui_MainWindow.h"
 #include "QtHelpers.h"
+#include "DarkTheme.h"
 
 #include <QFileDialog>
 #include <QCryptographicHash>
 #include <QMessageBox>
 #include <QFileInfo>
 #include <QDir>
-#include <QSettings>
 
 MainWindow::MainWindow(int port, QWidget* parent)
     : QMainWindow(parent)
@@ -17,8 +17,9 @@ MainWindow::MainWindow(int port, QWidget* parent)
 {
     ui->setupUi(this);
     mDockManager = new ads::CDockManager(this);
+    mDockManager->setStyleSheet(DarkTheme::dockManagerStyleSheet());
 
-    auto dockWidget = new ads::CDockWidget("Log");
+    auto dockWidget = new ads::CDockWidget(mDockManager, "Log");
     dockWidget->setWidget(ui->plainTextLog);
     dockWidget->setFeature(ads::CDockWidget::DockWidgetClosable, false);
     mDockManager->addDockWidgetTab(ads::TopDockWidgetArea, dockWidget);
@@ -26,7 +27,6 @@ MainWindow::MainWindow(int port, QWidget* parent)
     qtRestoreGeometry(this);
     qtRestoreState(this);
 
-    initializeThemes();
     initializeExamples(QDir(":/examples"), ui->menu_Examples);
 
     // Start the server
@@ -114,19 +114,12 @@ void MainWindow::llvmSlot(QString type, QString title, QByteArray data)
     }
     mDialogs.append(bitcodeDialog);
 
-    auto dockWidget = new ads::CDockWidget(bitcodeDialog->windowTitle());
+    auto dockWidget = new ads::CDockWidget(mDockManager, bitcodeDialog->windowTitle());
     dockWidget->setWidget(bitcodeDialog);
     mDockManager->addDockWidgetTab(ads::TopDockWidgetArea, dockWidget);
     //bitcodeDialog->show();
     //bitcodeDialog->raise();
     //bitcodeDialog->activateWindow();
-}
-
-void MainWindow::initializeThemes()
-{
-    for (const auto& theme : QDir(":/themes").entryInfoList())
-        addThemeFile(theme);
-    addThemeFile(QFileInfo("REVIDE.css"));
 }
 
 void MainWindow::initializeExamples(const QDir& dir, QMenu* menu)
@@ -145,31 +138,4 @@ void MainWindow::initializeExamples(const QDir& dir, QMenu* menu)
             });
         }
     }
-}
-void MainWindow::addThemeFile(const QFileInfo& theme)
-{
-    if (!theme.exists())
-        return;
-
-    auto action = ui->menu_Theme->addAction(theme.baseName());
-    action->setCheckable(true);
-
-    if (theme.filePath() == QSettings().value("Theme").toString())
-        action->setChecked(true);
-
-    connect(action, &QAction::triggered, [this, theme, action]() {
-        QFile f(theme.filePath());
-        if (!f.open(QFile::ReadOnly))
-        {
-            QMessageBox::critical(this, tr("Error"), tr("Failed to read theme file %1").arg(f.fileName()));
-            return;
-        }
-
-        qApp->setStyleSheet(f.readAll());
-        QSettings().setValue("Theme", f.fileName());
-
-        for (QAction* menuAction : ui->menu_Theme->actions())
-            menuAction->setChecked(false);
-        action->setChecked(true);
-    });
 }

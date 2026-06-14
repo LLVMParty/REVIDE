@@ -1,7 +1,7 @@
 include(FetchContent)
 
 set(REVIDE_QTADS_GIT_REPOSITORY "https://github.com/githubuser0xFFFF/Qt-Advanced-Docking-System" CACHE STRING "Qt Advanced Docking System Git repository")
-set(REVIDE_QTADS_GIT_TAG "22f609c" CACHE STRING "Qt Advanced Docking System Git tag or commit")
+set(REVIDE_QTADS_GIT_TAG "4.5.0" CACHE STRING "Qt Advanced Docking System Git tag or commit")
 
 if(NOT REVIDE_DOWNLOAD_QTADS)
     message(FATAL_ERROR "QtADS is fetched with FetchContent. Enable REVIDE_DOWNLOAD_QTADS to configure this project.")

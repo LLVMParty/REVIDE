@@ -21,8 +21,11 @@ class QColorWrapper
     QColor color;
 
 public:
-    explicit QColorWrapper(QWidget* widget)
-        : widget(widget) {}
+    explicit QColorWrapper(QWidget* widget, QColor defaultColor = {})
+        : widget(widget)
+        , color(defaultColor)
+    {
+    }
 
     QColor operator()() const
     {
@@ -45,8 +48,8 @@ public:
     }
 };
 
-#define CSS_COLOR(name)                                      \
-    QColorWrapper name = QColorWrapper(Styled::widget());    \
-    Q_PROPERTY(QColor name READ get_##name WRITE set_##name) \
-    QColor get_##name() const { return name.get(false); }    \
+#define STYLE_COLOR(name, defaultColor)                                 \
+    QColorWrapper name = QColorWrapper(Styled::widget(), defaultColor); \
+    Q_PROPERTY(QColor name READ get_##name WRITE set_##name)            \
+    QColor get_##name() const { return name.get(false); }               \
     void set_##name(QColor color) { name.set(color); }

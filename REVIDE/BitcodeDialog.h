@@ -58,15 +58,15 @@ class BitcodeDialog : public ads::CDockManager, Styled<BitcodeDialog>
     Q_OBJECT
 
 public:
-    CSS_COLOR(keywordColor);
-    CSS_COLOR(instructionColor);
-    CSS_COLOR(globalVariableColor);
-    CSS_COLOR(localVariableColor);
-    CSS_COLOR(constantColor);
-    CSS_COLOR(integerTypeColor);
-    CSS_COLOR(commentColor);
-    CSS_COLOR(metadataColor);
-    CSS_COLOR(functionColor);
+    STYLE_COLOR(keywordColor, "#c678dd");
+    STYLE_COLOR(instructionColor, "#c678dd");
+    STYLE_COLOR(globalVariableColor, "#e06c75");
+    STYLE_COLOR(localVariableColor, "#e06c75");
+    STYLE_COLOR(constantColor, "#56b6c2");
+    STYLE_COLOR(integerTypeColor, "#d19a66");
+    STYLE_COLOR(commentColor, "#5c6370");
+    STYLE_COLOR(metadataColor, "#5c6370");
+    STYLE_COLOR(functionColor, "#61afef");
 
 public:
     explicit BitcodeDialog(QWidget* parent = nullptr);

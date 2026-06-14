@@ -60,6 +60,60 @@ void GenericGraphView::loadCurrentGraph()
             center();
         });
 }
+
+void GenericGraphView::drawBlock(QPainter& p, GraphView::GraphBlock& block, bool interactive)
+{
+    const bool blockSelected = interactive && block.entry == selectedBlock;
+    const auto oldSelectedBackground = disassemblySelectedBackgroundColor;
+    disassemblySelectedBackgroundColor = disassemblyBackgroundColor;
+
+    SimpleTextGraphView::drawBlock(p, block, interactive);
+    disassemblySelectedBackgroundColor = oldSelectedBackground;
+
+    if(blockSelected)
+    {
+        QPen pen(QColor("#61afef"), 2.0);
+        pen.setCosmetic(true);
+        p.setPen(pen);
+        p.setBrush(Qt::NoBrush);
+        p.drawRect(QRectF(block.x, block.y, block.width, block.height).adjusted(1, 1, -1, -1));
+    }
+}
+
+GraphView::EdgeConfiguration GenericGraphView::edgeConfiguration(GraphView::GraphBlock& from,
+                                                                  GraphView::GraphBlock* to,
+                                                                  bool interactive)
+{
+    EdgeConfiguration ec;
+    ec.color = QColor("#4b5263");
+    ec.start_arrow = false;
+    ec.end_arrow = true;
+    ec.width_scale = 1.25;
+
+    auto edgesItr = mGraph.mEdges.find(from.entry);
+    if(edgesItr != mGraph.mEdges.end())
+    {
+        const auto& edges = edgesItr->second;
+        auto edgeItr = std::find(edges.begin(), edges.end(), to->entry);
+        if(edges.size() == 2 && edgeItr != edges.end())
+        {
+            ec.color = (edgeItr == edges.begin()) ? QColor("#7f9868") : QColor("#b06464");
+        }
+        else if(edges.size() > 2)
+        {
+            ec.color = QColor("#56b6c2");
+        }
+    }
+
+    if(interactive && (selectedBlock == from.entry || selectedBlock == to->entry))
+    {
+        ec.color = ec.color.lighter(125);
+        ec.width_scale = 2.25;
+    }
+
+    return ec;
+}
+
 void GenericGraphView::blockClicked(GraphView::GraphBlock& block, QMouseEvent* event, QPoint pos)
 {
     auto oldSelection = selectedBlock;

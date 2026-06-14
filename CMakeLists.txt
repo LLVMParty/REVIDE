@@ -14,6 +14,7 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 # Prepend the CMake module search path so we can use our own modules
 list(PREPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/CMake)
+include(Paths)
 
 # Dependencies
 set(CMAKE_FOLDER "Dependencies")
@@ -60,6 +61,9 @@ file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
 )
 
 add_executable(${PROJECT_NAME} ${SOURCES})
+if(WIN32)
+    set_target_properties(${PROJECT_NAME} PROPERTIES WIN32_EXECUTABLE ON)
+endif()
 
 source_group(TREE ${CMAKE_CURRENT_LIST_DIR} FILES ${SOURCES})
 
@@ -119,9 +123,6 @@ target_include_directories(${PROJECT_NAME} PRIVATE "REVIDE" "REVIDE/cutter")
 
 # https://cmake.org/cmake/help/v3.14/manual/cmake-compile-features.7.html#requiring-language-standards
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_20)
-
-# Compile a GUI application
-#target_link_options(${PROJECT_NAME} PRIVATE /SUBSYSTEM:WINDOWS)
 
 # Cutter-specific variables
 target_compile_definitions(${PROJECT_NAME} PRIVATE CUTTER_SOURCE_BUILD CUTTER_EXPORT=)

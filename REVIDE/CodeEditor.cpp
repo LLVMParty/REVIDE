@@ -49,16 +49,32 @@
 ****************************************************************************/
 
 #include "CodeEditor.h"
+#include "DarkTheme.h"
 
 #include <QPainter>
 #include <QTextBlock>
 #include <QRegularExpression>
 #include <QDebug>
 #include <QAction>
+#include <QFont>
 
 CodeEditor::CodeEditor(QWidget* parent)
     : QPlainTextEdit(parent)
 {
+    QFont editorFont("Consolas");
+    editorFont.setStyleHint(QFont::Monospace);
+    editorFont.setPointSize(10);
+    editorFont.setBold(true);
+    editorFont.setStyleStrategy(QFont::PreferAntialias);
+    setFont(editorFont);
+
+    QPalette editorPalette = palette();
+    editorPalette.setColor(QPalette::Base, DarkTheme::window());
+    editorPalette.setColor(QPalette::Text, DarkTheme::text());
+    editorPalette.setColor(QPalette::Highlight, DarkTheme::alternateBase());
+    editorPalette.setColor(QPalette::HighlightedText, DarkTheme::text());
+    setPalette(editorPalette);
+
     setWordWrapMode(QTextOption::NoWrap);
     lineNumberArea = new LineNumberArea(this);
 

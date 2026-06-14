@@ -67,10 +67,10 @@ class CodeEditor : public QPlainTextEdit, Styled<CodeEditor>
     Q_OBJECT
 
 public:
-    CSS_COLOR(selectedLineHighlightColor);
-    CSS_COLOR(errorLineHighlightColor);
-    CSS_COLOR(lineNumberColor);
-    CSS_COLOR(lineNumberBackgroundColor);
+    STYLE_COLOR(selectedLineHighlightColor, "#2c313c");
+    STYLE_COLOR(errorLineHighlightColor, "#c24039");
+    STYLE_COLOR(lineNumberColor, "#5c6370");
+    STYLE_COLOR(lineNumberBackgroundColor, "#282c34");
 
 public:
     CodeEditor(QWidget* parent = nullptr);

@@ -4,6 +4,7 @@
 #include "DocumentationDialog.h"
 #include "GraphDialog.h"
 #include "QtHelpers.h"
+#include "DarkTheme.h"
 
 #include <llvm/IR/Module.h>
 #include <llvm/IR/AssemblyAnnotationWriter.h>
@@ -222,6 +223,8 @@ BitcodeDialog::BitcodeDialog(QWidget* parent)
     : ads::CDockManager(parent)
     , mContext(new LLVMGlobalContext())
 {
+    setStyleSheet(DarkTheme::dockManagerStyleSheet());
+
     auto codeWidget = new QWidget();
     codeWidget->setWindowTitle(tr("Code"));
     mPlainTextBitcode = new CodeEditor(codeWidget);
@@ -304,7 +307,7 @@ BitcodeDialog::BitcodeDialog(QWidget* parent)
 
     auto dockHelper = [this](ads::DockWidgetArea area, QWidget* widget, ads::CDockWidget* inside = nullptr)
     {
-        auto dockWidget = new ads::CDockWidget(widget->windowTitle(), this);
+        auto dockWidget = new ads::CDockWidget(this, widget->windowTitle(), this);
         dockWidget->setFeature(ads::CDockWidget::DockWidgetClosable, false);
         dockWidget->setWidget(widget);
         addDockWidget(area, dockWidget, inside ? inside->dockAreaWidget() : nullptr);
@@ -333,7 +336,7 @@ bool BitcodeDialog::load(const QString& type, const QByteArray& data, QString& e
         {
             mErrorMessage = errorMessage;
             mPlainTextBitcode->setErrorLine(mErrorLine);
-            if (data.length() > 4 && data[0] == 'B' && data[1] == 'C' && data[2] == 0xC0 && data[3] == 0xDE)
+            if (data.length() > 4 && data[0] == 'B' && data[1] == 'C' && static_cast<unsigned char>(data[2]) == 0xC0 && static_cast<unsigned char>(data[3]) == 0xDE)
             {
                 mPlainTextBitcode->setPlainText(errorMessage);
             }
@@ -776,10 +779,9 @@ void BitcodeDialog::bitcodeCursorPositionChangedSlot()
                         name = mBlockLabelMap.at(&BB);
                     auto id = getBlockId(&BB);
                     graph.addNode(id, name);
-                    // https://stackoverflow.com/a/59933151/1806760
-                    for (auto pred : llvm::predecessors(&BB))
+                    for(auto successor : llvm::successors(&BB))
                     {
-                        graph.addEdge(getBlockId(pred), id);
+                        graph.addEdge(id, getBlockId(successor));
                     }
                 }
 

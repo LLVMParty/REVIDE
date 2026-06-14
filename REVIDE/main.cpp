@@ -1,9 +1,10 @@
 #include "MainWindow.h"
+#include "DarkTheme.h"
 
 #include <QApplication>
-#include <QMessageBox>
 #include <QSettings>
 #include <QCommandLineParser>
+#include <QTimer>
 
 #include "core/Cutter.h"
 #include "common/Configuration.h"
@@ -46,33 +47,14 @@ int main(int argc, char* argv[])
         QApplication::setFont(font);
     }
 
-    // Handle theme settings
-    {
-        QSettings settings;
-        const QString themeKey("Theme");
-        auto themeFile = settings.value(themeKey).toString();
-        const auto defaultTheme = ":/themes/Light.css";
-        if (themeFile.isEmpty())
-        {
-            themeFile = defaultTheme;
-            settings.setValue(themeKey, themeFile);
-            settings.sync();
-        }
-        QFile f(themeFile);
-        if (!f.open(QFile::ReadOnly))
-        {
-            f.setFileName(defaultTheme);
-            f.open(QFile::ReadOnly);
-            settings.setValue(themeKey, QVariant());
-            settings.sync();
-        }
-        app.setStyleSheet(f.readAll());
-        // TODO: if stylesheet parsing fails Qt continues with a warning
-    }
+    // Apply the fixed One Dark-based Fusion palette.
+    DarkTheme::apply();
+    QSettings().setValue("ColorPalette", 0);
 
     // Create Cutter instance
     CutterCore core(nullptr);
     Config()->loadInitial();
+    DarkTheme::apply();
 
     // Handle a custom port
     if (parser.isSet(paramPort))
@@ -90,9 +72,16 @@ int main(int argc, char* argv[])
 
     // Handle the --noserver command line
     if (parser.isSet(paramNoServer))
+    {
         w.noServer();
+    }
     else
+    {
+        DarkTheme::applyToWindow(&w);
         w.show();
+        QTimer::singleShot(0, &w, [&w]() { DarkTheme::applyToWindow(&w); });
+        QTimer::singleShot(100, &w, [&w]() { DarkTheme::applyToWindow(&w); });
+    }
 
     // Run application
     return QApplication::exec();

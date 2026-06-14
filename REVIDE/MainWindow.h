@@ -33,8 +33,6 @@ private slots:
     void llvmSlot(QString type, QString title, QByteArray data);
 
 private:
-    void addThemeFile(const QFileInfo& theme);
-    void initializeThemes();
     void initializeExamples(const QDir& dir, QMenu* menu);
 
 private:

@@ -2,6 +2,8 @@
 
 #include <unordered_map>
 #include <type_traits>
+#include <algorithm>
+#include <vector>
 
 #include <QDialog>
 
@@ -11,12 +13,12 @@ struct GenericGraph
 {
     ut64 mId = UT64_MAX; // unique id identifying this graph (used for caching)
     std::unordered_map<ut64, QString> mNodes;
-    std::unordered_map<ut64, std::unordered_set<ut64>> mEdges;
+    std::unordered_map<ut64, std::vector<ut64>> mEdges;
 
     GenericGraph() = default;
     explicit GenericGraph(ut64 id) : mId(id) { }
 
-    void addNode(ut64 id, const QString& text, const std::unordered_set<ut64>& edges = {})
+    void addNode(ut64 id, const QString& text, const std::vector<ut64>& edges = {})
     {
         mNodes.emplace(id, text);
         for(const auto& to : edges)
@@ -25,7 +27,9 @@ struct GenericGraph
 
     void addEdge(ut64 from, ut64 to)
     {
-        mEdges[from].emplace(to);
+        auto& edges = mEdges[from];
+        if(std::find(edges.begin(), edges.end(), to) == edges.end())
+            edges.push_back(to);
     }
 
     void clear()
@@ -65,6 +69,10 @@ signals:
 
 protected:
     void loadCurrentGraph() override;
+    void drawBlock(QPainter &p, GraphView::GraphBlock &block, bool interactive) override;
+    GraphView::EdgeConfiguration edgeConfiguration(GraphView::GraphBlock &from,
+                                                   GraphView::GraphBlock *to,
+                                                   bool interactive) override;
     void blockClicked(GraphView::GraphBlock &block, QMouseEvent *event, QPoint pos) override;
 
 private:
