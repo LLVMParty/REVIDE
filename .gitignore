@@ -1,5 +1,6 @@
 build*/
 CMakeLists.txt.user
+CMakeUserPresets.json
 .idea/
 .cache/
 cmake-build-*/

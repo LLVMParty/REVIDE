@@ -1,47 +1,41 @@
 # REVIDE
 
-![screenshot of the UI](https://i.imgur.com/xs3lxA9.png)
+![screenshot of the UI](.github/REVIDE.png)
 
 ## Dependencies
 
-You can get precompiled dependencies for MSVC here: https://github.com/LLVMParty/REVIDE/releases/tag/libraries
+CMake downloads missing dependencies by default:
 
-### Qt
+- LLVM 21.1.6 from [LLVMParty/llvm-builds](https://github.com/LLVMParty/llvm-builds)
+- Qt 5.12.12 from [x64dbg/deps](https://github.com/x64dbg/deps) on Windows/MSVC builds
+- Qt Advanced Docking System through CMake `FetchContent`
 
-From Git Bash:
+Set `REVIDE_DOWNLOAD_DEPENDENCIES=OFF` to require locally installed dependencies. Individual downloads can be controlled with `REVIDE_DOWNLOAD_LLVM`, `REVIDE_DOWNLOAD_QT`, and `REVIDE_DOWNLOAD_QTADS`.
 
-```
-curl -O -L https://code.qt.io/cgit/qbs/qbs.git/plain/scripts/install-qt.sh 1>nul
-sh install-qt.sh --directory /d/Qt --host windows_x86 --target desktop --toolchain win64_msvc2017_64 --version 5.12.9 qt 3d qtactiveqt qtbase qtcanvas3d qtconnectivity qtdeclarative qtgamepad qtgraphicaleffects qtimageformats qtlocation qtm ultimedia qtquickcontrols qtquickcontrols2 qtremoteobjects qtscxml qtsensors qtserialbus qtserialport qtspeech qtsvg qt tools qttranslations qtwebchannel qtwebsockets qtwebview qtwinextras qtxmlpatterns d3dcompiler_47 opengl32sw
-```
+For local installations, set [CMAKE_PREFIX_PATH](https://cmake.org/cmake/help/latest/variable/CMAKE_PREFIX_PATH.html) to the LLVM and Qt prefixes.
 
-Alternatively you can download and install Qt from [here](https://www.qt.io/offline-installers).
-
-On macos (M1) you can install it with `brew install qt@6`. You can find the prefix with `brew --prefix qt@6`.
-
-### LLVM
-
-TODO: Add instructions on how to produce this package.
-
-On macos you can install LLVM with `brew install llvm@15`. You can find the prefix with `brew --prefix llvm@15`.
-
-For Windows you can download precompiled dependencies (LLVM 15 and Qt 5.12.12) [here](https://github.com/LLVMParty/REVIDE/releases/tag/libraries).
+On macos you can install dependencies with `brew install llvm qt@6`. You can find prefixes with `brew --prefix llvm` and `brew --prefix qt@6`.
 
 ## Building (generic)
 
-You have to set the [CMAKE_PREFIX_PATH](https://cmake.org/cmake/help/latest/variable/CMAKE_PREFIX_PATH.html) CMake variable on the CMake command line to a `;`-separated list of prefixes for the dependencies:
-
 ```bash
-cmake -B build "-DCMAKE_PREFIX_PATH=/path/to/llvm;/path/to/qt"
+cmake -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo
 cmake --build build --parallel --config RelWithDebInfo
 ```
 
-It is important to surround the argument with quotes on Unix platforms, because the `;` appears to have a special meaning.
+To use local dependency installs:
+
+```bash
+cmake -B build "-DCMAKE_PREFIX_PATH=/path/to/llvm;/path/to/qt" -DREVIDE_DOWNLOAD_DEPENDENCIES=OFF
+cmake --build build --parallel --config RelWithDebInfo
+```
+
+Quote the `CMAKE_PREFIX_PATH` argument on Unix platforms because `;` is a shell metacharacter.
 
 ## Building (macos)
 
 ```sh
-brew install llvm@15 qt@6
-cmake -B build "-DCMAKE_PREFIX_PATH=$(brew --prefix llvm@15);$(brew --prefix qt@6)"
+brew install llvm qt@6
+cmake -B build "-DCMAKE_PREFIX_PATH=$(brew --prefix llvm);$(brew --prefix qt@6)" -DREVIDE_DOWNLOAD_DEPENDENCIES=OFF
 cmake --build build --parallel
 ```

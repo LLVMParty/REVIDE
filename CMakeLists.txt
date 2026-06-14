@@ -1,8 +1,13 @@
 # Based on https://github.com/ttroy50/cmake-examples/tree/master/02-sub-projects/A-basic
 # https://cliutils.gitlab.io/modern-cmake/
-cmake_minimum_required(VERSION 3.15)
+cmake_minimum_required(VERSION 3.21)
 
 project(REVIDE)
+
+option(REVIDE_DOWNLOAD_DEPENDENCIES "Download missing third-party dependencies during configure" ON)
+option(REVIDE_DOWNLOAD_LLVM "Download prebuilt LLVM if LLVMConfig.cmake is not found" ${REVIDE_DOWNLOAD_DEPENDENCIES})
+option(REVIDE_DOWNLOAD_QT "Download prebuilt Qt 5 on Windows/MSVC if Qt is not found" ${REVIDE_DOWNLOAD_DEPENDENCIES})
+option(REVIDE_DOWNLOAD_QTADS "Download Qt Advanced Docking System sources during configure" ${REVIDE_DOWNLOAD_DEPENDENCIES})
 
 # Enable solution folder support
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
@@ -13,12 +18,9 @@ list(PREPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/CMake)
 # Dependencies
 set(CMAKE_FOLDER "Dependencies")
 find_package(LLVM-Wrapper REQUIRED)
-include(Qt)
-add_subdirectory(Dependencies)
-unset(CMAKE_FOLDER)
 
 # Visual Studio generator specific flags
-if (CMAKE_GENERATOR MATCHES "Visual Studio")
+if(CMAKE_GENERATOR MATCHES "Visual Studio")
     # HACK: DO NOT this to add compiler flags/definitions, use target_compile_options on a
     # target instead https://cmake.org/cmake/help/latest/command/target_compile_options.html
 
@@ -35,14 +37,18 @@ if(MSVC)
     if(NOT DEFINED LLVM_USE_CRT_RELEASE)
         # Reference: https://github.com/llvm/llvm-project/issues/62739
         message(WARNING "LLVM_USE_CRT_RELEASE is not set, keeping defaults")
-    elseif(${LLVM_USE_CRT_RELEASE} STREQUAL "MD")
+    elseif(LLVM_USE_CRT_RELEASE STREQUAL "MD")
         set(CMAKE_MSVC_RUNTIME_LIBRARY MultiThreadedDLL)
-    elseif(${LLVM_USE_CRT_RELEASE} STREQUAL "MT")
+    elseif(LLVM_USE_CRT_RELEASE STREQUAL "MT")
         set(CMAKE_MSVC_RUNTIME_LIBRARY MultiThreaded)
     else()
         message(FATAL_ERROR "Unsupported LLVM_USE_CRT_RELEASE=${LLVM_USE_CRT_RELEASE}")
     endif()
 endif()
+
+include(Qt)
+add_subdirectory(Dependencies)
+unset(CMAKE_FOLDER)
 
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
     REVIDE/*.cpp
@@ -63,6 +69,20 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     LLVM-Wrapper
     ads::qtadvanceddocking
 )
+
+if(WIN32 AND TARGET LLVM)
+    get_target_property(LLVM_TARGET_TYPE LLVM TYPE)
+    if(LLVM_TARGET_TYPE STREQUAL "SHARED_LIBRARY")
+        add_custom_command(TARGET ${PROJECT_NAME}
+            POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "$<TARGET_FILE:LLVM>"
+                "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
+        )
+        install(FILES "$<TARGET_FILE:LLVM>" DESTINATION bin)
+    endif()
+    unset(LLVM_TARGET_TYPE)
+endif()
 
 if(TARGET ${QT_PACKAGE}::windeployqt)
     # create a target that rebuilds when cmake is re-run

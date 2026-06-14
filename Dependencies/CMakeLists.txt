@@ -1,77 +1,59 @@
-# https://github.com/TheLartians/CPM.cmake/releases
-include(CPM.cmake)
+include(FetchContent)
 
-#[[
-# Add QScintilla dependency
-CPMAddPackage(
-	NAME QScintilla
-	VERSION 2.13.3
-	GIT_REPOSITORY https://github.com/opencor/qscintilla
-	DOWNLOAD_ONLY ON
-)
-if(QScintilla_ADDED)
-	# TODO: Qt translations?
-	file(GLOB_RECURSE SOURCES
-		${QScintilla_SOURCE_DIR}/scintilla/*.cpp
-		${QScintilla_SOURCE_DIR}/scintilla/*.h
-		${QScintilla_SOURCE_DIR}/src/*.cpp
-		${QScintilla_SOURCE_DIR}/src/*.h
-	)
-	add_library(QScintilla STATIC ${SOURCES})
-	target_include_directories(QScintilla PUBLIC
-		${QScintilla_SOURCE_DIR}/scintilla/include
-		${QScintilla_SOURCE_DIR}/scintilla/lexlib
-		${QScintilla_SOURCE_DIR}/scintilla/src
-		${QScintilla_SOURCE_DIR}/src
-	)
-	target_compile_definitions(QScintilla PUBLIC
-		SCINTILLA_QT
-		SCI_LEXER
-		INCLUDE_DEPRECATED_FEATURES
-	)
-	target_compile_definitions(QScintilla PRIVATE
-		QSCINTILLA_MAKE_DLL
-	)
-	target_link_libraries(QScintilla PUBLIC
-		${QT_PACKAGE}::Widgets
-		${QT_PACKAGE}::PrintSupport
-	)
-	source_group(TREE ${QScintilla_SOURCE_DIR} FILES ${SOURCES})
+set(REVIDE_QTADS_GIT_REPOSITORY "https://github.com/githubuser0xFFFF/Qt-Advanced-Docking-System" CACHE STRING "Qt Advanced Docking System Git repository")
+set(REVIDE_QTADS_GIT_TAG "22f609c" CACHE STRING "Qt Advanced Docking System Git tag or commit")
+
+if(NOT REVIDE_DOWNLOAD_QTADS)
+    message(FATAL_ERROR "QtADS is fetched with FetchContent. Enable REVIDE_DOWNLOAD_QTADS to configure this project.")
 endif()
-#]]
-CPMAddPackage(
-	NAME QtADS
-	VERSION 3.8.3
-	GIT_REPOSITORY https://github.com/githubuser0xFFFF/Qt-Advanced-Docking-System
-	GIT_TAG 22f609c
-	DOWNLOAD_ONLY ON
-	#BUILD_STATIC=OFF
-	#BUILD_EXAMPLES=OFF
-)
-if(QtADS_ADDED)
-	file(GLOB SOURCES
-		${QtADS_SOURCE_DIR}/src/*.cpp
-		${QtADS_SOURCE_DIR}/src/*.h
-		${QtADS_SOURCE_DIR}/src/*.qrc
-	)
-	if(UNIX AND NOT APPLE)
-		list(APPEND SOURCES
-			${QtADS_SOURCE_DIR}/src/linux/FloatingWidgetTitleBar.cpp
-			${QtADS_SOURCE_DIR}/src/linux/FloatingWidgetTitleBar.h
-		)
-	endif()
-	add_library(qtadvanceddocking STATIC ${SOURCES})
-	target_compile_options(qtadvanceddocking PUBLIC "$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
-	if(UNIX AND NOT APPLE)
-		target_link_libraries(qtadvanceddocking PUBLIC xcb)
-	endif()
-	target_compile_features(qtadvanceddocking PUBLIC cxx_std_17)
-	target_include_directories(qtadvanceddocking PUBLIC "${QtADS_SOURCE_DIR}/src")
-	target_link_libraries(qtadvanceddocking PUBLIC
-		${QT_PACKAGE}::Core
-		${QT_PACKAGE}::Gui
-		${QT_PACKAGE}::Widgets
-	)
-	target_compile_definitions(qtadvanceddocking PUBLIC ADS_STATIC)
-	add_library(ads::qtadvanceddocking ALIAS qtadvanceddocking)
+
+if(DEFINED FETCHCONTENT_QUIET)
+    set(QTADS_HAD_FETCHCONTENT_QUIET TRUE)
+    set(QTADS_OLD_FETCHCONTENT_QUIET "${FETCHCONTENT_QUIET}")
 endif()
+set(FETCHCONTENT_QUIET OFF)
+
+FetchContent_Declare(QtADS
+    GIT_REPOSITORY "${REVIDE_QTADS_GIT_REPOSITORY}"
+    GIT_TAG "${REVIDE_QTADS_GIT_TAG}"
+    SOURCE_SUBDIR cmake-do-not-add
+)
+FetchContent_MakeAvailable(QtADS)
+FetchContent_GetProperties(QtADS SOURCE_DIR QtADS_SOURCE_DIR)
+
+if(QTADS_HAD_FETCHCONTENT_QUIET)
+    set(FETCHCONTENT_QUIET "${QTADS_OLD_FETCHCONTENT_QUIET}")
+else()
+    unset(FETCHCONTENT_QUIET)
+endif()
+
+file(GLOB QTADS_SOURCES CONFIGURE_DEPENDS
+    ${QtADS_SOURCE_DIR}/src/*.cpp
+    ${QtADS_SOURCE_DIR}/src/*.h
+    ${QtADS_SOURCE_DIR}/src/*.qrc
+)
+if(UNIX AND NOT APPLE)
+    list(APPEND QTADS_SOURCES
+        ${QtADS_SOURCE_DIR}/src/linux/FloatingWidgetTitleBar.cpp
+        ${QtADS_SOURCE_DIR}/src/linux/FloatingWidgetTitleBar.h
+    )
+endif()
+
+add_library(qtadvanceddocking STATIC ${QTADS_SOURCES})
+if(MSVC)
+    target_compile_options(qtadvanceddocking PUBLIC /utf-8)
+endif()
+if(UNIX AND NOT APPLE)
+    target_link_libraries(qtadvanceddocking PUBLIC xcb)
+endif()
+target_compile_features(qtadvanceddocking PUBLIC cxx_std_17)
+target_include_directories(qtadvanceddocking PUBLIC "${QtADS_SOURCE_DIR}/src")
+target_link_libraries(qtadvanceddocking PUBLIC
+    ${QT_PACKAGE}::Core
+    ${QT_PACKAGE}::Gui
+    ${QT_PACKAGE}::Widgets
+    ${QT_PACKAGE}::PrintSupport
+)
+target_compile_definitions(qtadvanceddocking PUBLIC ADS_STATIC)
+source_group(TREE ${QtADS_SOURCE_DIR} FILES ${QTADS_SOURCES})
+add_library(ads::qtadvanceddocking ALIAS qtadvanceddocking)
