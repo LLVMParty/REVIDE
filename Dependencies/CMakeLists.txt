@@ -48,6 +48,14 @@ if(UNIX AND NOT APPLE)
 endif()
 target_compile_features(qtadvanceddocking PUBLIC cxx_std_17)
 target_include_directories(qtadvanceddocking PUBLIC "${QtADS_SOURCE_DIR}/src")
+# Zero idea on how to populate the version variables properly.
+if(NOT APPLE AND NOT WINDOWS)
+   find_package(QT NAMES Qt6)
+endif()
+if(NOT APPLE AND NOT WINDOWS AND QT_VERSION VERSION_GREATER_EQUAL 6.10.0)
+    find_package(Qt6 REQUIRED COMPONENTS GuiPrivate QUIET)
+    target_link_libraries(qtadvanceddocking PUBLIC Qt6::GuiPrivate)
+endif()
 target_link_libraries(qtadvanceddocking PUBLIC
     ${QT_PACKAGE}::Core
     ${QT_PACKAGE}::Gui
