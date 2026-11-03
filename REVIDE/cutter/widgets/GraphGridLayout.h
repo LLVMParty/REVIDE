@@ -82,6 +82,7 @@ private:
         }
     };
 
+public:
     struct LayoutState
     {
         std::unordered_map<ut64, GridBlock> grid_blocks;
@@ -99,6 +100,7 @@ private:
         std::vector<int> edgeColumnOffset;
         std::vector<int> edgeRowOffset;
     };
+private:
 
     using GridBlockMap = std::unordered_map<ut64, GridBlock>;
 

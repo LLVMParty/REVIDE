@@ -438,7 +438,7 @@ static QString risonencode(const QString& s)
         }
         else
         {
-            r += QString("%%%1").arg((unsigned char)ch, 10, QChar('0'));
+            r += QString("%%%1").arg((unsigned char)ch, 10, (char)/*QChar*/('0'));
         }
     }
     return r;
